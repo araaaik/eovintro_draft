@@ -1,0 +1,330 @@
+{
+  "version": 1,
+  "scene": {
+    "uiVisible": true,
+    "groupsGlobalVisibility": "on",
+    "globalMotion": "right-float",
+    "globalSpeed": null,
+    "dimOverlayHeightPercent": 20
+  },
+  "groups": [
+    {
+      "id": "group-a",
+      "name": "Group A",
+      "visible": true,
+      "motion": "right-float",
+      "x": 0,
+      "y": 42.5,
+      "height": 18,
+      "scale": 1.63,
+      "opacity": 0.56,
+      "speed": 308,
+      "clouds": [
+        {
+          "slot": 1,
+          "asset": "./clouds_2.png",
+          "top": 12,
+          "left": 5,
+          "size": 32,
+          "opacity": 0.74,
+          "bobSpeed": 19,
+          "delay": -11,
+          "tilt": ""
+        },
+        {
+          "slot": 2,
+          "asset": "",
+          "top": 2,
+          "left": 54,
+          "size": 26,
+          "opacity": 0.66,
+          "bobSpeed": 15,
+          "delay": -3,
+          "tilt": "tilt-soft"
+        }
+      ]
+    },
+    {
+      "id": "group-b",
+      "name": "Group B",
+      "visible": true,
+      "motion": "right-float",
+      "x": -15.5,
+      "y": 17,
+      "height": 19,
+      "scale": 1.35,
+      "opacity": 1,
+      "speed": 192,
+      "clouds": [
+        {
+          "slot": 1,
+          "asset": "",
+          "top": 4,
+          "left": 2,
+          "size": 28,
+          "opacity": 0.8,
+          "bobSpeed": 18,
+          "delay": -8,
+          "tilt": "tilt-wide"
+        },
+        {
+          "slot": 2,
+          "asset": "",
+          "top": 24,
+          "left": 36,
+          "size": 24,
+          "opacity": 0.7,
+          "bobSpeed": 13,
+          "delay": -2,
+          "tilt": "tilt-soft"
+        },
+        {
+          "slot": 3,
+          "asset": "./clouds_3.png",
+          "top": 8,
+          "left": 67,
+          "size": 24,
+          "opacity": 0.72,
+          "bobSpeed": 20,
+          "delay": -13,
+          "tilt": ""
+        }
+      ]
+    },
+    {
+      "id": "group-c",
+      "name": "Group C",
+      "visible": true,
+      "motion": "right-float",
+      "x": 20,
+      "y": 5,
+      "height": 21,
+      "scale": 0.95,
+      "opacity": 1,
+      "speed": 220,
+      "clouds": [
+        {
+          "slot": 1,
+          "asset": "./clouds_4.png",
+          "top": 10,
+          "left": 4,
+          "size": 26,
+          "opacity": 0.72,
+          "bobSpeed": 14,
+          "delay": -4,
+          "tilt": "tilt-soft"
+        },
+        {
+          "slot": 2,
+          "asset": "",
+          "top": 22,
+          "left": 32,
+          "size": 28,
+          "opacity": 0.78,
+          "bobSpeed": 17,
+          "delay": -10,
+          "tilt": ""
+        },
+        {
+          "slot": 3,
+          "asset": "",
+          "top": 6,
+          "left": 66,
+          "size": 30,
+          "opacity": 0.8,
+          "bobSpeed": 21,
+          "delay": -15,
+          "tilt": "tilt-wide"
+        }
+      ]
+    },
+    {
+      "id": "group-d",
+      "name": "Group D",
+      "visible": true,
+      "motion": "right-float",
+      "x": -2.5,
+      "y": 19.5,
+      "height": 22,
+      "scale": 1,
+      "opacity": 0.64,
+      "speed": 258,
+      "clouds": [
+        {
+          "slot": 1,
+          "asset": "",
+          "top": 12,
+          "left": 0,
+          "size": 30,
+          "opacity": 0.82,
+          "bobSpeed": 16,
+          "delay": -7,
+          "tilt": ""
+        },
+        {
+          "slot": 2,
+          "asset": "",
+          "top": 2,
+          "left": 28,
+          "size": 32,
+          "opacity": 0.84,
+          "bobSpeed": 18,
+          "delay": -12,
+          "tilt": "tilt-wide"
+        },
+        {
+          "slot": 3,
+          "asset": "./clouds_6.png",
+          "top": 18,
+          "left": 60,
+          "size": 26,
+          "opacity": 0.74,
+          "bobSpeed": 12,
+          "delay": -1,
+          "tilt": "tilt-soft"
+        }
+      ]
+    },
+    {
+      "id": "group-e",
+      "name": "Group E",
+      "visible": true,
+      "motion": "right-float",
+      "x": -20,
+      "y": 17,
+      "height": 24,
+      "scale": 1.3,
+      "opacity": 1,
+      "speed": 244,
+      "clouds": [
+        {
+          "slot": 1,
+          "asset": "",
+          "top": 8,
+          "left": 6,
+          "size": 28,
+          "opacity": 0.78,
+          "bobSpeed": 13,
+          "delay": -5,
+          "tilt": "tilt-soft"
+        },
+        {
+          "slot": 2,
+          "asset": "",
+          "top": 20,
+          "left": 34,
+          "size": 30,
+          "opacity": 0.82,
+          "bobSpeed": 16,
+          "delay": -9,
+          "tilt": ""
+        },
+        {
+          "slot": 3,
+          "asset": "",
+          "top": 4,
+          "left": 66,
+          "size": 34,
+          "opacity": 0.88,
+          "bobSpeed": 19,
+          "delay": -14,
+          "tilt": "tilt-wide"
+        }
+      ]
+    },
+    {
+      "id": "group-f",
+      "name": "Group F",
+      "visible": true,
+      "motion": "right-float",
+      "x": -1,
+      "y": 17,
+      "height": 26,
+      "scale": 1.12,
+      "opacity": 0.86,
+      "speed": 228,
+      "clouds": [
+        {
+          "slot": 1,
+          "asset": "./clouds_3.png",
+          "top": 6,
+          "left": 2,
+          "size": 34,
+          "opacity": 0.9,
+          "bobSpeed": 18,
+          "delay": -10,
+          "tilt": "tilt-wide"
+        },
+        {
+          "slot": 2,
+          "asset": "",
+          "top": 24,
+          "left": 36,
+          "size": 26,
+          "opacity": 0.76,
+          "bobSpeed": 12,
+          "delay": -2,
+          "tilt": "tilt-soft"
+        },
+        {
+          "slot": 3,
+          "asset": "",
+          "top": 10,
+          "left": 68,
+          "size": 28,
+          "opacity": 0.84,
+          "bobSpeed": 17,
+          "delay": -8,
+          "tilt": ""
+        }
+      ]
+    },
+    {
+      "id": "group-g",
+      "name": "Group G",
+      "visible": true,
+      "motion": "right-float",
+      "x": 6.5,
+      "y": 32,
+      "height": 29,
+      "scale": 1.04,
+      "opacity": 1,
+      "speed": 216,
+      "clouds": [
+        {
+          "slot": 1,
+          "asset": "",
+          "top": 6,
+          "left": 4,
+          "size": 36,
+          "opacity": 0.9,
+          "bobSpeed": 15,
+          "delay": -6,
+          "tilt": ""
+        },
+        {
+          "slot": 2,
+          "asset": "./clouds_3.png",
+          "top": 1,
+          "left": 34,
+          "size": 38,
+          "opacity": 0.94,
+          "bobSpeed": 19,
+          "delay": -11,
+          "tilt": "tilt-wide"
+        },
+        {
+          "slot": 3,
+          "asset": "",
+          "top": 20,
+          "left": 70,
+          "size": 26,
+          "opacity": 0.8,
+          "bobSpeed": 11,
+          "delay": -3,
+          "tilt": "tilt-soft"
+        }
+      ]
+    }
+  ]
+}

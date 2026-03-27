@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Animation Export</title>
+  <style>
+      :root {
+        --page-bg: #000;
+        --frame-width: min(34vw, 390px);
+        --frame-radius: 28px;
+        --frame-shadow: 0 24px 56px rgba(0, 0, 0, 0.52);
+        --sky-height: 54%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: var(--page-bg);
+        font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+      }
+
+      .frame {
+        position: relative;
+        width: var(--frame-width);
+        aspect-ratio: 9 / 16;
+        overflow: hidden;
+        border-radius: var(--frame-radius);
+        background: #050505;
+        box-shadow: var(--frame-shadow);
+        isolation: isolate;
+      }
+
+      .layer-base {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        user-select: none;
+        -webkit-user-drag: none;
+        pointer-events: none;
+      }
+
+      .cloud-field {
+        position: absolute;
+        inset: 0 0 auto;
+        height: var(--sky-height);
+        z-index: 2;
+        overflow: hidden;
+        pointer-events: none;
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 1) 0%,
+          rgba(0, 0, 0, 0.99) 34%,
+          rgba(0, 0, 0, 0.9) 54%,
+          rgba(0, 0, 0, 0.64) 72%,
+          rgba(0, 0, 0, 0.26) 88%,
+          rgba(0, 0, 0, 0.05) 97%,
+          rgba(0, 0, 0, 0) 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 1) 0%,
+          rgba(0, 0, 0, 0.99) 34%,
+          rgba(0, 0, 0, 0.9) 54%,
+          rgba(0, 0, 0, 0.64) 72%,
+          rgba(0, 0, 0, 0.26) 88%,
+          rgba(0, 0, 0, 0.05) 97%,
+          rgba(0, 0, 0, 0) 100%
+        );
+      }
+
+      .cloud-group {
+        position: absolute;
+        left: 0;
+        top: var(--y);
+        width: 100%;
+        height: var(--height);
+        opacity: var(--opacity);
+      }
+
+      .cloud-group[data-motion="float"],
+      .cloud-group[data-motion="left-float"],
+      .cloud-group[data-motion="right-float"] {
+        animation: group-float calc(var(--speed) * 0.08) ease-in-out infinite;
+      }
+
+      .cloud-group[data-motion="sway"] {
+        animation: group-sway calc(var(--speed) * 0.09) ease-in-out infinite;
+      }
+
+      .cloud-group[data-motion="pulse"] {
+        animation: group-pulse calc(var(--speed) * 0.07) ease-in-out infinite;
+      }
+
+      .cloud-group[data-motion="still"],
+      .cloud-group[data-motion="left"],
+      .cloud-group[data-motion="right"] {
+        animation: none;
+      }
+
+      .cloud-group__content {
+        position: absolute;
+        inset: 0;
+        transform: translateX(var(--x)) scale(var(--scale));
+        transform-origin: left top;
+      }
+
+      .cloud-group__track {
+        position: absolute;
+        inset: 0;
+        width: 200%;
+        height: 100%;
+        display: flex;
+        will-change: transform;
+      }
+
+      .cloud-strip {
+        position: relative;
+        flex: 0 0 50%;
+        height: 100%;
+      }
+
+      .cloud {
+        position: absolute;
+        top: var(--top);
+        left: var(--left);
+        width: var(--size);
+        opacity: var(--cloud-opacity);
+        transform-origin: center center;
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.14));
+        animation: bob var(--bob-speed) ease-in-out infinite;
+        animation-delay: var(--delay);
+      }
+
+      .cloud-group[data-motion="left"] .cloud-group__track,
+      .cloud-group[data-motion="left-float"] .cloud-group__track {
+        animation: drift var(--speed) linear infinite;
+      }
+
+      .cloud-group[data-motion="right"] .cloud-group__track,
+      .cloud-group[data-motion="right-float"] .cloud-group__track {
+        animation: drift-reverse var(--speed) linear infinite;
+      }
+
+      .cloud-group[data-motion="float"] .cloud-group__track,
+      .cloud-group[data-motion="still"] .cloud-group__track,
+      .cloud-group[data-motion="sway"] .cloud-group__track,
+      .cloud-group[data-motion="pulse"] .cloud-group__track {
+        animation: none;
+      }
+
+      .cloud-group[data-motion="left"] .cloud,
+      .cloud-group[data-motion="right"] .cloud,
+      .cloud-group[data-motion="still"] .cloud,
+      .cloud-group[data-motion="sway"] .cloud,
+      .cloud-group[data-motion="pulse"] .cloud {
+        animation: none;
+      }
+
+      .cloud img {
+        display: block;
+        width: 100%;
+        height: auto;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      .cloud.tilt-soft {
+        animation-name: bob-soft;
+      }
+
+      .cloud.tilt-wide {
+        animation-name: bob-wide;
+      }
+
+      .front {
+        z-index: 3;
+      }
+
+      .ui-overlay {
+        z-index: 5;
+      }
+
+      .ui-dim {
+        inset: auto 0 0;
+        height: 20%;
+        z-index: 4;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0) 0%,
+          rgba(0, 0, 0, 0.16) 38%,
+          rgba(0, 0, 0, 0.42) 72%,
+          rgba(0, 0, 0, 0.72) 100%
+        );
+      }
+
+      @keyframes drift {
+        from { transform: translate3d(0, 0, 0); }
+        to { transform: translate3d(-50%, 0, 0); }
+      }
+
+      @keyframes drift-reverse {
+        from { transform: translate3d(-8%, 0, 0); }
+        to { transform: translate3d(-58%, 0, 0); }
+      }
+
+      @keyframes bob {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(2.2%, 5%, 0) scale(1.035); }
+      }
+
+      @keyframes bob-soft {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(-2%, 3.5%, 0) scale(0.985); }
+      }
+
+      @keyframes bob-wide {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(3.2%, 4.8%, 0) scale(1.045); }
+      }
+
+      @keyframes group-float {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        50% { transform: translate3d(0, 14px, 0); }
+      }
+
+      @keyframes group-sway {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        25% { transform: translate3d(10px, 4px, 0); }
+        50% { transform: translate3d(0, 8px, 0); }
+        75% { transform: translate3d(-10px, 4px, 0); }
+      }
+
+      @keyframes group-pulse {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(0, 6px, 0) scale(1.035); }
+      }
+
+      @media (max-width: 760px) {
+        :root {
+          --frame-width: min(76vw, 390px);
+        }
+      }
+    </style>
+</head>
+<body>
+  <section class="frame" id="animationFrame" aria-label="Cloud animation">
+      <img class="layer-base" src="./back.png" alt="Back layer">
+
+      <div class="cloud-field" id="cloudField" aria-hidden="true">
+      <div class="cloud-group" id="group-a" data-motion="right-float" style="--x: 0%; --y: 42.5%; --height: 18%; --scale: 1.63; --opacity: 0.56; --speed: 308s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud" data-slot="1" style="--top: 12%; --left: 5%; --size: 32%; --cloud-opacity: 0.74; --bob-speed: 19s; --delay: -11s;">
+        <img data-slot="1" src="./clouds_2.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="2" style="--top: 2%; --left: 54%; --size: 26%; --cloud-opacity: 0.66; --bob-speed: 15s; --delay: -3s; display: none;">
+        <img data-slot="2" src="./clouds_1.png" alt="">
+      </div>
+    
+      </div>
+    
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud" data-slot="1" style="--top: 12%; --left: 5%; --size: 32%; --cloud-opacity: 0.74; --bob-speed: 19s; --delay: -11s;">
+        <img data-slot="1" src="./clouds_2.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="2" style="--top: 2%; --left: 54%; --size: 26%; --cloud-opacity: 0.66; --bob-speed: 15s; --delay: -3s; display: none;">
+        <img data-slot="2" src="./clouds_1.png" alt="">
+      </div>
+    
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="cloud-group" id="group-b" data-motion="right-float" style="--x: -15.5%; --y: 17%; --height: 19%; --scale: 1.35; --opacity: 1; --speed: 192s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-wide" data-slot="1" style="--top: 4%; --left: 2%; --size: 28%; --cloud-opacity: 0.8; --bob-speed: 18s; --delay: -8s; display: none;">
+        <img data-slot="1" src="./clouds_3.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="2" style="--top: 24%; --left: 36%; --size: 24%; --cloud-opacity: 0.7; --bob-speed: 13s; --delay: -2s; display: none;">
+        <img data-slot="2" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="3" style="--top: 8%; --left: 67%; --size: 24%; --cloud-opacity: 0.72; --bob-speed: 20s; --delay: -13s;">
+        <img data-slot="3" src="./clouds_3.png" alt="">
+      </div>
+    
+      </div>
+    
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-wide" data-slot="1" style="--top: 4%; --left: 2%; --size: 28%; --cloud-opacity: 0.8; --bob-speed: 18s; --delay: -8s; display: none;">
+        <img data-slot="1" src="./clouds_3.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="2" style="--top: 24%; --left: 36%; --size: 24%; --cloud-opacity: 0.7; --bob-speed: 13s; --delay: -2s; display: none;">
+        <img data-slot="2" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="3" style="--top: 8%; --left: 67%; --size: 24%; --cloud-opacity: 0.72; --bob-speed: 20s; --delay: -13s;">
+        <img data-slot="3" src="./clouds_3.png" alt="">
+      </div>
+    
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="cloud-group" id="group-c" data-motion="right-float" style="--x: 20%; --y: 5%; --height: 21%; --scale: 0.95; --opacity: 1; --speed: 220s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-soft" data-slot="1" style="--top: 10%; --left: 4%; --size: 26%; --cloud-opacity: 0.72; --bob-speed: 14s; --delay: -4s;">
+        <img data-slot="1" src="./clouds_4.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="2" style="--top: 22%; --left: 32%; --size: 28%; --cloud-opacity: 0.78; --bob-speed: 17s; --delay: -10s; display: none;">
+        <img data-slot="2" src="./clouds_5.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="3" style="--top: 6%; --left: 66%; --size: 30%; --cloud-opacity: 0.8; --bob-speed: 21s; --delay: -15s; display: none;">
+        <img data-slot="3" src="./clouds_3.png" alt="">
+      </div>
+    
+      </div>
+    
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-soft" data-slot="1" style="--top: 10%; --left: 4%; --size: 26%; --cloud-opacity: 0.72; --bob-speed: 14s; --delay: -4s;">
+        <img data-slot="1" src="./clouds_4.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="2" style="--top: 22%; --left: 32%; --size: 28%; --cloud-opacity: 0.78; --bob-speed: 17s; --delay: -10s; display: none;">
+        <img data-slot="2" src="./clouds_5.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="3" style="--top: 6%; --left: 66%; --size: 30%; --cloud-opacity: 0.8; --bob-speed: 21s; --delay: -15s; display: none;">
+        <img data-slot="3" src="./clouds_3.png" alt="">
+      </div>
+    
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="cloud-group" id="group-d" data-motion="right-float" style="--x: -2.5%; --y: 19.5%; --height: 22%; --scale: 1; --opacity: 0.64; --speed: 258s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud" data-slot="1" style="--top: 12%; --left: 0%; --size: 30%; --cloud-opacity: 0.82; --bob-speed: 16s; --delay: -7s; display: none;">
+        <img data-slot="1" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="2" style="--top: 2%; --left: 28%; --size: 32%; --cloud-opacity: 0.84; --bob-speed: 18s; --delay: -12s; display: none;">
+        <img data-slot="2" src="./clouds_5.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="3" style="--top: 18%; --left: 60%; --size: 26%; --cloud-opacity: 0.74; --bob-speed: 12s; --delay: -1s;">
+        <img data-slot="3" src="./clouds_6.png" alt="">
+      </div>
+    
+      </div>
+    
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud" data-slot="1" style="--top: 12%; --left: 0%; --size: 30%; --cloud-opacity: 0.82; --bob-speed: 16s; --delay: -7s; display: none;">
+        <img data-slot="1" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="2" style="--top: 2%; --left: 28%; --size: 32%; --cloud-opacity: 0.84; --bob-speed: 18s; --delay: -12s; display: none;">
+        <img data-slot="2" src="./clouds_5.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="3" style="--top: 18%; --left: 60%; --size: 26%; --cloud-opacity: 0.74; --bob-speed: 12s; --delay: -1s;">
+        <img data-slot="3" src="./clouds_6.png" alt="">
+      </div>
+    
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="cloud-group" id="group-e" data-motion="right-float" style="--x: -20%; --y: 17%; --height: 24%; --scale: 1.3; --opacity: 1; --speed: 244s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-soft" data-slot="1" style="--top: 8%; --left: 6%; --size: 28%; --cloud-opacity: 0.78; --bob-speed: 13s; --delay: -5s; display: none;">
+        <img data-slot="1" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="2" style="--top: 20%; --left: 34%; --size: 30%; --cloud-opacity: 0.82; --bob-speed: 16s; --delay: -9s; display: none;">
+        <img data-slot="2" src="./clouds_6.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="3" style="--top: 4%; --left: 66%; --size: 34%; --cloud-opacity: 0.88; --bob-speed: 19s; --delay: -14s; display: none;">
+        <img data-slot="3" src="./clouds_3.png" alt="">
+      </div>
+    
+      </div>
+    
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-soft" data-slot="1" style="--top: 8%; --left: 6%; --size: 28%; --cloud-opacity: 0.78; --bob-speed: 13s; --delay: -5s; display: none;">
+        <img data-slot="1" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="2" style="--top: 20%; --left: 34%; --size: 30%; --cloud-opacity: 0.82; --bob-speed: 16s; --delay: -9s; display: none;">
+        <img data-slot="2" src="./clouds_6.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="3" style="--top: 4%; --left: 66%; --size: 34%; --cloud-opacity: 0.88; --bob-speed: 19s; --delay: -14s; display: none;">
+        <img data-slot="3" src="./clouds_3.png" alt="">
+      </div>
+    
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="cloud-group" id="group-f" data-motion="right" style="--x: -1%; --y: 17%; --height: 26%; --scale: 1.12; --opacity: 0.86; --speed: 228s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-wide" data-slot="1" style="--top: 6%; --left: 2%; --size: 34%; --cloud-opacity: 0.9; --bob-speed: 18s; --delay: -10s;">
+        <img data-slot="1" src="./clouds_3.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="2" style="--top: 24%; --left: 36%; --size: 26%; --cloud-opacity: 0.76; --bob-speed: 12s; --delay: -2s; display: none;">
+        <img data-slot="2" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="3" style="--top: 10%; --left: 68%; --size: 28%; --cloud-opacity: 0.84; --bob-speed: 17s; --delay: -8s; display: none;">
+        <img data-slot="3" src="./clouds_2.png" alt="">
+      </div>
+    
+      </div>
+    
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud tilt-wide" data-slot="1" style="--top: 6%; --left: 2%; --size: 34%; --cloud-opacity: 0.9; --bob-speed: 18s; --delay: -10s;">
+        <img data-slot="1" src="./clouds_3.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="2" style="--top: 24%; --left: 36%; --size: 26%; --cloud-opacity: 0.76; --bob-speed: 12s; --delay: -2s; display: none;">
+        <img data-slot="2" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud" data-slot="3" style="--top: 10%; --left: 68%; --size: 28%; --cloud-opacity: 0.84; --bob-speed: 17s; --delay: -8s; display: none;">
+        <img data-slot="3" src="./clouds_2.png" alt="">
+      </div>
+    
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    
+      <div class="cloud-group" id="group-g" data-motion="right" style="--x: 6.5%; --y: 32%; --height: 29%; --scale: 1.04; --opacity: 1; --speed: 216s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud" data-slot="1" style="--top: 6%; --left: 4%; --size: 36%; --cloud-opacity: 0.9; --bob-speed: 15s; --delay: -6s; display: none;">
+        <img data-slot="1" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="2" style="--top: 1%; --left: 34%; --size: 38%; --cloud-opacity: 0.94; --bob-speed: 19s; --delay: -11s;">
+        <img data-slot="2" src="./clouds_3.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="3" style="--top: 20%; --left: 70%; --size: 26%; --cloud-opacity: 0.8; --bob-speed: 11s; --delay: -3s; display: none;">
+        <img data-slot="3" src="./clouds_1.png" alt="">
+      </div>
+    
+      </div>
+    
+            
+      <div class="cloud-strip">
+        
+      <div class="cloud" data-slot="1" style="--top: 6%; --left: 4%; --size: 36%; --cloud-opacity: 0.9; --bob-speed: 15s; --delay: -6s; display: none;">
+        <img data-slot="1" src="./clouds_1.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-wide" data-slot="2" style="--top: 1%; --left: 34%; --size: 38%; --cloud-opacity: 0.94; --bob-speed: 19s; --delay: -11s;">
+        <img data-slot="2" src="./clouds_3.png" alt="">
+      </div>
+    
+      <div class="cloud tilt-soft" data-slot="3" style="--top: 20%; --left: 70%; --size: 26%; --cloud-opacity: 0.8; --bob-speed: 11s; --delay: -3s; display: none;">
+        <img data-slot="3" src="./clouds_1.png" alt="">
+      </div>
+    
+      </div>
+    
+          </div>
+        </div>
+      </div>
+    </div>
+
+      <img class="layer-base front" src="./front.png" alt="Front layer">
+      <div class="layer-base ui-dim" id="uiDim" aria-hidden="true"></div>
+      <img class="layer-base ui-overlay" id="uiOverlay" src="./ui.png" alt="UI overlay">
+    </section>
+</body>
+</html>

@@ -1,0 +1,1345 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Layers Editor</title>
+  <style>
+    :root {
+      --page-bg: #000;
+      --frame-width: min(34vw, 390px);
+      --frame-height: calc(var(--frame-width) * 16 / 9);
+      --frame-radius: 28px;
+      --frame-shadow: 0 24px 56px rgba(0, 0, 0, 0.52);
+      --panel-bg: rgba(255, 255, 255, 0.06);
+      --panel-border: rgba(255, 255, 255, 0.14);
+      --panel-text: #f2f2f2;
+      --muted-text: rgba(255, 255, 255, 0.62);
+      --accent: #81c7ff;
+      --sky-height: 54%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: var(--page-bg);
+      color: var(--panel-text);
+      font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    .layout {
+      width: min(100%, 1180px);
+      padding: 28px;
+      display: grid;
+      grid-template-columns: auto minmax(300px, 360px);
+      gap: 28px;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .frame {
+      position: relative;
+      width: var(--frame-width);
+      aspect-ratio: 9 / 16;
+      overflow: hidden;
+      border-radius: var(--frame-radius);
+      background: #050505;
+      box-shadow: var(--frame-shadow);
+      isolation: isolate;
+    }
+
+    .layer-base {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .cloud-field {
+      position: absolute;
+      inset: 0 0 auto;
+      height: var(--sky-height);
+      z-index: 2;
+      overflow: hidden;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.99) 34%,
+        rgba(0, 0, 0, 0.9) 54%,
+        rgba(0, 0, 0, 0.64) 72%,
+        rgba(0, 0, 0, 0.26) 88%,
+        rgba(0, 0, 0, 0.05) 97%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.99) 34%,
+        rgba(0, 0, 0, 0.9) 54%,
+        rgba(0, 0, 0, 0.64) 72%,
+        rgba(0, 0, 0, 0.26) 88%,
+        rgba(0, 0, 0, 0.05) 97%,
+        rgba(0, 0, 0, 0) 100%
+      );
+    }
+
+    .cloud-group {
+      position: absolute;
+      left: 0;
+      top: var(--y);
+      width: 100%;
+      height: var(--height);
+      opacity: var(--opacity);
+    }
+
+    .cloud-group[data-motion="float"],
+    .cloud-group[data-motion="left-float"],
+    .cloud-group[data-motion="right-float"] {
+      animation: group-float calc(var(--speed) * 0.08) ease-in-out infinite;
+    }
+
+    .cloud-group[data-motion="sway"] {
+      animation: group-sway calc(var(--speed) * 0.09) ease-in-out infinite;
+    }
+
+    .cloud-group[data-motion="pulse"] {
+      animation: group-pulse calc(var(--speed) * 0.07) ease-in-out infinite;
+    }
+
+    .cloud-group[data-motion="still"],
+    .cloud-group[data-motion="left"],
+    .cloud-group[data-motion="right"] {
+      animation: none;
+    }
+
+    .cloud-group__content {
+      position: absolute;
+      inset: 0;
+      transform: translateX(var(--x)) scale(var(--scale));
+      transform-origin: left top;
+    }
+
+    .cloud-group__track {
+      position: absolute;
+      inset: 0;
+      width: 200%;
+      height: 100%;
+      display: flex;
+      will-change: transform;
+    }
+
+    .cloud-strip {
+      position: relative;
+      flex: 0 0 50%;
+      height: 100%;
+    }
+
+    .cloud {
+      position: absolute;
+      top: var(--top);
+      left: var(--left);
+      width: var(--size);
+      opacity: var(--cloud-opacity);
+      transform-origin: center center;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.14));
+      animation: bob var(--bob-speed) ease-in-out infinite;
+      animation-delay: var(--delay);
+    }
+
+    .cloud-group[data-motion="left"] .cloud-group__track,
+    .cloud-group[data-motion="left-float"] .cloud-group__track {
+      animation: drift var(--speed) linear infinite;
+    }
+
+    .cloud-group[data-motion="right"] .cloud-group__track,
+    .cloud-group[data-motion="right-float"] .cloud-group__track {
+      animation: drift-reverse var(--speed) linear infinite;
+    }
+
+    .cloud-group[data-motion="float"] .cloud-group__track,
+    .cloud-group[data-motion="still"] .cloud-group__track,
+    .cloud-group[data-motion="sway"] .cloud-group__track,
+    .cloud-group[data-motion="pulse"] .cloud-group__track {
+      animation: none;
+    }
+
+    .cloud-group[data-motion="left"] .cloud,
+    .cloud-group[data-motion="right"] .cloud,
+    .cloud-group[data-motion="still"] .cloud,
+    .cloud-group[data-motion="sway"] .cloud,
+    .cloud-group[data-motion="pulse"] .cloud {
+      animation: none;
+    }
+
+    .cloud img {
+      display: block;
+      width: 100%;
+      height: auto;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .cloud.tilt-soft {
+      animation-name: bob-soft;
+    }
+
+    .cloud.tilt-wide {
+      animation-name: bob-wide;
+    }
+
+    .front {
+      z-index: 3;
+    }
+
+    .ui-overlay {
+      z-index: 5;
+    }
+
+    .ui-dim {
+      inset: auto 0 0;
+      height: 20%;
+      z-index: 4;
+      background: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 0) 0%,
+        rgba(0, 0, 0, 0.16) 38%,
+        rgba(0, 0, 0, 0.42) 72%,
+        rgba(0, 0, 0, 0.72) 100%
+      );
+    }
+
+    .panel {
+      display: grid;
+      gap: 10px;
+      height: min(var(--frame-height), calc(100vh - 56px));
+      padding: 14px;
+      border: 1px solid var(--panel-border);
+      border-radius: 20px;
+      background: var(--panel-bg);
+      backdrop-filter: blur(18px);
+      overflow: auto;
+    }
+
+    .panel-header {
+      display: grid;
+      gap: 2px;
+      position: sticky;
+      top: 0;
+      z-index: 2;
+      padding-bottom: 6px;
+      background: linear-gradient(to bottom, rgba(15, 15, 15, 0.92), rgba(15, 15, 15, 0.74));
+      backdrop-filter: blur(18px);
+    }
+
+    .panel-title {
+      margin: 0;
+      font-size: 1rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .group-card {
+      display: grid;
+      gap: 10px;
+      padding: 12px;
+      border: 1px solid rgba(255, 255, 255, 0.1);
+      border-radius: 16px;
+      background: rgba(255, 255, 255, 0.04);
+    }
+
+    .group-card--global {
+      border-color: rgba(129, 199, 255, 0.28);
+      background: rgba(129, 199, 255, 0.09);
+    }
+
+    .group-head {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .group-name {
+      margin: 0;
+      font-size: 0.88rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+    }
+
+    .reset-button {
+      appearance: none;
+      border: 1px solid rgba(255, 255, 255, 0.16);
+      border-radius: 999px;
+      background: rgba(255, 255, 255, 0.06);
+      color: var(--panel-text);
+      padding: 6px 12px;
+      font-size: 0.68rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .export-button {
+      appearance: none;
+      border: 1px solid rgba(129, 199, 255, 0.44);
+      border-radius: 999px;
+      background: rgba(129, 199, 255, 0.16);
+      color: var(--panel-text);
+      padding: 8px 12px;
+      font-size: 0.7rem;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      cursor: pointer;
+    }
+
+    .export-wrap {
+      display: flex;
+      gap: 10px;
+      justify-content: flex-end;
+      padding-top: 12px;
+    }
+
+    .control-row {
+      display: grid;
+      grid-template-columns: 86px 1fr 52px;
+      gap: 8px;
+      align-items: center;
+      font-size: 0.8rem;
+    }
+
+    .control-row.field {
+      grid-template-columns: 86px 1fr;
+    }
+
+    .control-row.select {
+      grid-template-columns: 86px 1fr;
+    }
+
+    .control-row label {
+      color: var(--muted-text);
+    }
+
+    .control-row output {
+      justify-self: end;
+      color: var(--panel-text);
+      font-variant-numeric: tabular-nums;
+    }
+
+    .control-note {
+      margin: 0;
+      color: var(--muted-text);
+      font-size: 0.73rem;
+      line-height: 1.4;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      margin: 0;
+      accent-color: var(--accent);
+      cursor: pointer;
+    }
+
+    input[type="number"] {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--panel-text);
+      font: inherit;
+    }
+
+    select {
+      width: 100%;
+      padding: 7px 9px;
+      border: 1px solid rgba(255, 255, 255, 0.14);
+      border-radius: 10px;
+      background: rgba(255, 255, 255, 0.08);
+      color: var(--panel-text);
+      font: inherit;
+      color-scheme: dark;
+    }
+
+    option {
+      background: #1f1f1f;
+      color: #f2f2f2;
+    }
+
+    input[type="number"]:focus,
+    select:focus {
+      outline: 1px solid rgba(129, 199, 255, 0.8);
+      border-color: rgba(129, 199, 255, 0.8);
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(-50%, 0, 0); }
+    }
+
+    @keyframes drift-reverse {
+      from { transform: translate3d(-8%, 0, 0); }
+      to { transform: translate3d(-58%, 0, 0); }
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(2.2%, 5%, 0) scale(1.035); }
+    }
+
+    @keyframes bob-soft {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-2%, 3.5%, 0) scale(0.985); }
+    }
+
+    @keyframes bob-wide {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(3.2%, 4.8%, 0) scale(1.045); }
+    }
+
+    @keyframes group-float {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      50% { transform: translate3d(0, 14px, 0); }
+    }
+
+    @keyframes group-sway {
+      0%, 100% { transform: translate3d(0, 0, 0); }
+      25% { transform: translate3d(10px, 4px, 0); }
+      50% { transform: translate3d(0, 8px, 0); }
+      75% { transform: translate3d(-10px, 4px, 0); }
+    }
+
+    @keyframes group-pulse {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(0, 6px, 0) scale(1.035); }
+    }
+
+    @media (max-width: 980px) {
+      :root {
+        --frame-width: min(76vw, 390px);
+      }
+
+      .layout {
+        grid-template-columns: 1fr;
+        justify-items: center;
+      }
+
+      .panel {
+        width: min(100%, 560px);
+        height: auto;
+        max-height: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="frame" id="animationFrame" aria-label="Cloud animation">
+      <img class="layer-base" src="./back.png" alt="Back layer">
+
+      <div class="cloud-field" id="cloudField" aria-hidden="true"></div>
+
+      <img class="layer-base front" src="./front.png" alt="Front layer">
+      <div class="layer-base ui-dim" id="uiDim" aria-hidden="true"></div>
+      <img class="layer-base ui-overlay" id="uiOverlay" src="./ui.png" alt="UI overlay">
+    </section>
+
+    <aside class="panel">
+      <header class="panel-header">
+        <h1 class="panel-title">Cloud Controls</h1>
+      </header>
+
+      <section class="group-card group-card--global">
+        <div class="group-head">
+          <h2 class="group-name">All Layers</h2>
+          <button class="reset-button" id="reset-all-button" type="button">Reset All</button>
+        </div>
+
+        <div class="control-row select">
+          <label for="global-motion">Motion</label>
+          <select id="global-motion">
+            <option value="" selected>Mixed</option>
+            <option value="left-float">Left + Float</option>
+            <option value="right-float">Right + Float</option>
+            <option value="left">Left Only</option>
+            <option value="right">Right Only</option>
+            <option value="float">Float Only</option>
+            <option value="sway">Sway</option>
+            <option value="pulse">Pulse</option>
+            <option value="still">Still</option>
+          </select>
+        </div>
+
+        <div class="control-row field">
+          <label for="global-speed">Speed</label>
+          <input id="global-speed" type="number" min="1" step="1" placeholder="Mixed">
+        </div>
+
+        <div class="control-row select">
+          <label for="global-visibility">Groups</label>
+          <select id="global-visibility">
+            <option value="" selected>Mixed</option>
+            <option value="on">On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+
+        <div class="control-row select">
+          <label for="ui-visibility">UI</label>
+          <select id="ui-visibility">
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+
+        <p class="control-note">These controls apply one animation and one speed to all 7 cloud layers at once.</p>
+      </section>
+
+      <div id="groupCards"></div>
+      <div class="export-wrap">
+        <button class="export-button" id="exportHtmlButton" type="button">Export HTML</button>
+        <button class="export-button" id="exportJsonButton" type="button">Export JSON</button>
+      </div>
+    </aside>
+  </main>
+
+  <script>
+    const cloudField = document.getElementById("cloudField");
+    const groupCards = document.getElementById("groupCards");
+    const exportHtmlButton = document.getElementById("exportHtmlButton");
+    const exportJsonButton = document.getElementById("exportJsonButton");
+    const animationFrame = document.getElementById("animationFrame");
+    const globalMotionSelect = document.getElementById("global-motion");
+    const globalSpeedInput = document.getElementById("global-speed");
+    const globalVisibilitySelect = document.getElementById("global-visibility");
+    const uiVisibilitySelect = document.getElementById("ui-visibility");
+    const uiDim = document.getElementById("uiDim");
+    const uiOverlay = document.getElementById("uiOverlay");
+    const resetAllButton = document.getElementById("reset-all-button");
+
+    const motionOptions = [
+      { value: "left-float", label: "Left + Float" },
+      { value: "right-float", label: "Right + Float" },
+      { value: "left", label: "Left Only" },
+      { value: "right", label: "Right Only" },
+      { value: "float", label: "Float Only" },
+      { value: "sway", label: "Sway" },
+      { value: "pulse", label: "Pulse" },
+      { value: "still", label: "Still" }
+    ];
+
+    const assetOptions = [
+      { value: "", label: "None" },
+      { value: "./clouds_1.png", label: "clouds_1" },
+      { value: "./clouds_2.png", label: "clouds_2" },
+      { value: "./clouds_3.png", label: "clouds_3" },
+      { value: "./clouds_4.png", label: "clouds_4" },
+      { value: "./clouds_5.png", label: "clouds_5" },
+      { value: "./clouds_6.png", label: "clouds_6" }
+    ];
+
+    const groupConfigs = [
+      {
+        id: "group-a",
+        name: "Group A",
+        motion: "left-float",
+        x: 0,
+        y: 4,
+        height: 18,
+        scale: 0.92,
+        opacity: 0.56,
+        speed: 208,
+        clouds: [
+          { asset: "./clouds_2.png", top: 12, left: 5, size: 32, opacity: 0.74, bobSpeed: 19, delay: -11, tilt: "" },
+          { asset: "./clouds_1.png", top: 2, left: 54, size: 26, opacity: 0.66, bobSpeed: 15, delay: -3, tilt: "tilt-soft" }
+        ]
+      },
+      {
+        id: "group-b",
+        name: "Group B",
+        motion: "right-float",
+        x: 0,
+        y: 11,
+        height: 19,
+        scale: 0.96,
+        opacity: 0.62,
+        speed: 192,
+        clouds: [
+          { asset: "./clouds_3.png", top: 4, left: 2, size: 28, opacity: 0.8, bobSpeed: 18, delay: -8, tilt: "tilt-wide" },
+          { asset: "./clouds_1.png", top: 24, left: 36, size: 24, opacity: 0.7, bobSpeed: 13, delay: -2, tilt: "tilt-soft" },
+          { asset: "./clouds_2.png", top: 8, left: 67, size: 24, opacity: 0.72, bobSpeed: 20, delay: -13, tilt: "" }
+        ]
+      },
+      {
+        id: "group-c",
+        name: "Group C",
+        motion: "left-float",
+        x: 0,
+        y: 18,
+        height: 21,
+        scale: 1,
+        opacity: 0.68,
+        speed: 174,
+        clouds: [
+          { asset: "./clouds_1.png", top: 10, left: 4, size: 26, opacity: 0.72, bobSpeed: 14, delay: -4, tilt: "tilt-soft" },
+          { asset: "./clouds_2.png", top: 22, left: 32, size: 28, opacity: 0.78, bobSpeed: 17, delay: -10, tilt: "" },
+          { asset: "./clouds_3.png", top: 6, left: 66, size: 30, opacity: 0.8, bobSpeed: 21, delay: -15, tilt: "tilt-wide" }
+        ]
+      },
+      {
+        id: "group-d",
+        name: "Group D",
+        motion: "right-float",
+        x: 0,
+        y: 25,
+        height: 22,
+        scale: 1.04,
+        opacity: 0.74,
+        speed: 158,
+        clouds: [
+          { asset: "./clouds_2.png", top: 12, left: 0, size: 30, opacity: 0.82, bobSpeed: 16, delay: -7, tilt: "" },
+          { asset: "./clouds_3.png", top: 2, left: 28, size: 32, opacity: 0.84, bobSpeed: 18, delay: -12, tilt: "tilt-wide" },
+          { asset: "./clouds_1.png", top: 18, left: 60, size: 26, opacity: 0.74, bobSpeed: 12, delay: -1, tilt: "tilt-soft" }
+        ]
+      },
+      {
+        id: "group-e",
+        name: "Group E",
+        motion: "left-float",
+        x: 0,
+        y: 32,
+        height: 24,
+        scale: 1.08,
+        opacity: 0.8,
+        speed: 144,
+        clouds: [
+          { asset: "./clouds_1.png", top: 8, left: 6, size: 28, opacity: 0.78, bobSpeed: 13, delay: -5, tilt: "tilt-soft" },
+          { asset: "./clouds_2.png", top: 20, left: 34, size: 30, opacity: 0.82, bobSpeed: 16, delay: -9, tilt: "" },
+          { asset: "./clouds_3.png", top: 4, left: 66, size: 34, opacity: 0.88, bobSpeed: 19, delay: -14, tilt: "tilt-wide" }
+        ]
+      },
+      {
+        id: "group-f",
+        name: "Group F",
+        motion: "right-float",
+        x: 0,
+        y: 39,
+        height: 26,
+        scale: 1.12,
+        opacity: 0.86,
+        speed: 128,
+        clouds: [
+          { asset: "./clouds_3.png", top: 6, left: 2, size: 34, opacity: 0.9, bobSpeed: 18, delay: -10, tilt: "tilt-wide" },
+          { asset: "./clouds_1.png", top: 24, left: 36, size: 26, opacity: 0.76, bobSpeed: 12, delay: -2, tilt: "tilt-soft" },
+          { asset: "./clouds_2.png", top: 10, left: 68, size: 28, opacity: 0.84, bobSpeed: 17, delay: -8, tilt: "" }
+        ]
+      },
+      {
+        id: "group-g",
+        name: "Group G",
+        motion: "left-float",
+        x: 0,
+        y: 46,
+        height: 29,
+        scale: 1.16,
+        opacity: 0.92,
+        speed: 116,
+        clouds: [
+          { asset: "./clouds_2.png", top: 6, left: 4, size: 36, opacity: 0.9, bobSpeed: 15, delay: -6, tilt: "" },
+          { asset: "./clouds_3.png", top: 1, left: 34, size: 38, opacity: 0.94, bobSpeed: 19, delay: -11, tilt: "tilt-wide" },
+          { asset: "./clouds_1.png", top: 20, left: 70, size: 26, opacity: 0.8, bobSpeed: 11, delay: -3, tilt: "tilt-soft" }
+        ]
+      }
+    ];
+
+    const escapeAttribute = (value) => String(value).replace(/"/g, "&quot;");
+
+    const renderOptions = (options, selectedValue) => options.map(({ value, label }) => `
+      <option value="${escapeAttribute(value)}"${value === selectedValue ? " selected" : ""}>${label}</option>
+    `).join("");
+
+    const renderCloud = (cloud, index) => `
+      <div class="cloud${cloud.tilt ? ` ${cloud.tilt}` : ""}" data-slot="${index + 1}" style="--top: ${cloud.top}%; --left: ${cloud.left}%; --size: ${cloud.size}%; --cloud-opacity: ${cloud.opacity}; --bob-speed: ${cloud.bobSpeed}s; --delay: ${cloud.delay}s;">
+        <img data-slot="${index + 1}" src="${cloud.asset}" alt="">
+      </div>
+    `;
+
+    const renderCloudStrip = (clouds) => `
+      <div class="cloud-strip">
+        ${clouds.map(renderCloud).join("")}
+      </div>
+    `;
+
+    const renderGroup = (group) => `
+      <div class="cloud-group" id="${group.id}" data-motion="${group.motion}" style="--x: ${group.x}%; --y: ${group.y}%; --height: ${group.height}%; --scale: ${group.scale}; --opacity: ${group.opacity}; --speed: ${group.speed}s;">
+        <div class="cloud-group__content">
+          <div class="cloud-group__track">
+            ${renderCloudStrip(group.clouds)}
+            ${renderCloudStrip(group.clouds)}
+          </div>
+        </div>
+      </div>
+    `;
+
+    const renderAssetControls = (group) => group.clouds.map((cloud, index) => `
+      <div class="control-row select">
+        <label for="${group.id}-slot-${index + 1}">Asset ${index + 1}</label>
+        <select id="${group.id}-slot-${index + 1}" data-slot="${index + 1}">
+          ${renderOptions(assetOptions, cloud.asset)}
+        </select>
+      </div>
+    `).join("");
+
+    const renderGroupCard = (group) => `
+      <section class="group-card" data-target="${group.id}">
+        <div class="group-head">
+          <h2 class="group-name">${group.name}</h2>
+          <button class="reset-button" type="button">Reset</button>
+        </div>
+
+        <div class="control-row select">
+          <label for="${group.id}-motion">Motion</label>
+          <select id="${group.id}-motion" data-motion-control="true">
+            ${renderOptions(motionOptions, group.motion)}
+          </select>
+        </div>
+
+        <div class="control-row select">
+          <label for="${group.id}-visibility">Group</label>
+          <select id="${group.id}-visibility" data-visibility-control="true">
+            <option value="on" selected>On</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+
+        ${renderAssetControls(group)}
+
+        <div class="control-row field">
+          <label for="${group.id}-scale">Size</label>
+          <input id="${group.id}-scale" type="number" min="0" step="0.01" value="${group.scale}" data-var="scale" data-format="scale">
+        </div>
+        <div class="control-row">
+          <label for="${group.id}-x">X</label>
+          <input id="${group.id}-x" type="range" min="-20" max="20" step="0.5" value="${group.x}" data-var="x" data-format="percent">
+          <output>${group.x}%</output>
+        </div>
+        <div class="control-row">
+          <label for="${group.id}-y">Y</label>
+          <input id="${group.id}-y" type="range" min="-6" max="62" step="0.5" value="${group.y}" data-var="y" data-format="percent">
+          <output>${group.y}%</output>
+        </div>
+        <div class="control-row field">
+          <label for="${group.id}-opacity">Opacity</label>
+          <input id="${group.id}-opacity" type="range" min="0" max="1" step="0.01" value="${group.opacity}" data-var="opacity" data-format="opacity">
+          <output>${Math.round(group.opacity * 100)}%</output>
+        </div>
+        <div class="control-row field">
+          <label for="${group.id}-speed">Speed</label>
+          <input id="${group.id}-speed" type="number" min="1" step="1" value="${group.speed}" data-var="speed" data-format="seconds">
+        </div>
+      </section>
+    `;
+
+    cloudField.innerHTML = groupConfigs.map(renderGroup).join("");
+    groupCards.innerHTML = groupConfigs.map(renderGroupCard).join("");
+
+    const cards = document.querySelectorAll(".group-card[data-target]");
+
+    const applyValue = (target, variable, value) => {
+      if (variable === "scale") {
+        target.style.setProperty("--scale", value);
+      } else if (variable === "x") {
+        target.style.setProperty("--x", value + "%");
+      } else if (variable === "y") {
+        target.style.setProperty("--y", value + "%");
+      } else if (variable === "opacity") {
+        target.style.setProperty("--opacity", value);
+      } else if (variable === "speed") {
+        target.style.setProperty("--speed", value + "s");
+      }
+    };
+
+    const formatValue = (format, value) => {
+      if (format === "scale") {
+        return Number(value).toFixed(2) + "x";
+      }
+      if (format === "percent") {
+        return Math.round(Number(value) * 10) / 10 + "%";
+      }
+      if (format === "opacity") {
+        return Math.round(Number(value) * 100) + "%";
+      }
+      if (format === "seconds") {
+        return Math.round(Number(value)) + "s";
+      }
+      return value;
+    };
+
+    const getMotionSelects = () => Array.from(document.querySelectorAll("select[data-motion-control]"));
+    const getSpeedInputs = () => Array.from(document.querySelectorAll('input[data-var="speed"]'));
+    const getGroupElements = () => Array.from(document.querySelectorAll(".cloud-group"));
+    const getVisibilitySelects = () => Array.from(document.querySelectorAll("select[data-visibility-control]"));
+
+    const setAllGroupsVisibility = (isVisible) => {
+      getGroupElements().forEach((group) => {
+        group.style.display = isVisible ? "" : "none";
+      });
+      getVisibilitySelects().forEach((select) => {
+        select.value = isVisible ? "on" : "off";
+      });
+      globalVisibilitySelect.value = isVisible ? "on" : "off";
+    };
+
+    const syncGlobalControls = () => {
+      const motionValues = [...new Set(getMotionSelects().map((select) => select.value))];
+      globalMotionSelect.value = motionValues.length === 1 ? motionValues[0] : "";
+
+      const speedValues = [...new Set(getSpeedInputs().map((input) => input.value))];
+      globalSpeedInput.value = speedValues.length === 1 ? speedValues[0] : "";
+
+      const visibilityValues = [...new Set(getVisibilitySelects().map((select) => select.value))];
+      globalVisibilitySelect.value = visibilityValues.length === 1 ? visibilityValues[0] : "";
+    };
+
+    const resetCard = (card) => {
+      const inputs = card.querySelectorAll("input[data-var]");
+      const assetSelects = card.querySelectorAll("select[data-slot]");
+      const motionSelect = card.querySelector("select[data-motion-control]");
+      const visibilitySelect = card.querySelector("select[data-visibility-control]");
+
+      inputs.forEach((input) => {
+        input.value = input.dataset.defaultValue;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+
+      assetSelects.forEach((select) => {
+        select.value = select.dataset.defaultValue;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+
+      if (motionSelect) {
+        motionSelect.value = motionSelect.dataset.defaultValue;
+        motionSelect.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+
+      if (visibilitySelect) {
+        visibilitySelect.value = visibilitySelect.dataset.defaultValue;
+        visibilitySelect.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    };
+
+    const exportStyles = `
+      :root {
+        --page-bg: #000;
+        --frame-width: min(34vw, 390px);
+        --frame-radius: 28px;
+        --frame-shadow: 0 24px 56px rgba(0, 0, 0, 0.52);
+        --sky-height: 54%;
+      }
+
+      * {
+        box-sizing: border-box;
+      }
+
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        overflow: hidden;
+        background: var(--page-bg);
+        font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+      }
+
+      .frame {
+        position: relative;
+        width: var(--frame-width);
+        aspect-ratio: 9 / 16;
+        overflow: hidden;
+        border-radius: var(--frame-radius);
+        background: #050505;
+        box-shadow: var(--frame-shadow);
+        isolation: isolate;
+      }
+
+      .layer-base {
+        position: absolute;
+        inset: 0;
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        user-select: none;
+        -webkit-user-drag: none;
+        pointer-events: none;
+      }
+
+      .cloud-field {
+        position: absolute;
+        inset: 0 0 auto;
+        height: var(--sky-height);
+        z-index: 2;
+        overflow: hidden;
+        pointer-events: none;
+        -webkit-mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 1) 0%,
+          rgba(0, 0, 0, 0.99) 34%,
+          rgba(0, 0, 0, 0.9) 54%,
+          rgba(0, 0, 0, 0.64) 72%,
+          rgba(0, 0, 0, 0.26) 88%,
+          rgba(0, 0, 0, 0.05) 97%,
+          rgba(0, 0, 0, 0) 100%
+        );
+        mask-image: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 1) 0%,
+          rgba(0, 0, 0, 0.99) 34%,
+          rgba(0, 0, 0, 0.9) 54%,
+          rgba(0, 0, 0, 0.64) 72%,
+          rgba(0, 0, 0, 0.26) 88%,
+          rgba(0, 0, 0, 0.05) 97%,
+          rgba(0, 0, 0, 0) 100%
+        );
+      }
+
+      .cloud-group {
+        position: absolute;
+        left: 0;
+        top: var(--y);
+        width: 100%;
+        height: var(--height);
+        opacity: var(--opacity);
+      }
+
+      .cloud-group[data-motion="float"],
+      .cloud-group[data-motion="left-float"],
+      .cloud-group[data-motion="right-float"] {
+        animation: group-float calc(var(--speed) * 0.08) ease-in-out infinite;
+      }
+
+      .cloud-group[data-motion="sway"] {
+        animation: group-sway calc(var(--speed) * 0.09) ease-in-out infinite;
+      }
+
+      .cloud-group[data-motion="pulse"] {
+        animation: group-pulse calc(var(--speed) * 0.07) ease-in-out infinite;
+      }
+
+      .cloud-group[data-motion="still"],
+      .cloud-group[data-motion="left"],
+      .cloud-group[data-motion="right"] {
+        animation: none;
+      }
+
+      .cloud-group__content {
+        position: absolute;
+        inset: 0;
+        transform: translateX(var(--x)) scale(var(--scale));
+        transform-origin: left top;
+      }
+
+      .cloud-group__track {
+        position: absolute;
+        inset: 0;
+        width: 200%;
+        height: 100%;
+        display: flex;
+        will-change: transform;
+      }
+
+      .cloud-strip {
+        position: relative;
+        flex: 0 0 50%;
+        height: 100%;
+      }
+
+      .cloud {
+        position: absolute;
+        top: var(--top);
+        left: var(--left);
+        width: var(--size);
+        opacity: var(--cloud-opacity);
+        transform-origin: center center;
+        filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.14));
+        animation: bob var(--bob-speed) ease-in-out infinite;
+        animation-delay: var(--delay);
+      }
+
+      .cloud-group[data-motion="left"] .cloud-group__track,
+      .cloud-group[data-motion="left-float"] .cloud-group__track {
+        animation: drift var(--speed) linear infinite;
+      }
+
+      .cloud-group[data-motion="right"] .cloud-group__track,
+      .cloud-group[data-motion="right-float"] .cloud-group__track {
+        animation: drift-reverse var(--speed) linear infinite;
+      }
+
+      .cloud-group[data-motion="float"] .cloud-group__track,
+      .cloud-group[data-motion="still"] .cloud-group__track,
+      .cloud-group[data-motion="sway"] .cloud-group__track,
+      .cloud-group[data-motion="pulse"] .cloud-group__track {
+        animation: none;
+      }
+
+      .cloud-group[data-motion="left"] .cloud,
+      .cloud-group[data-motion="right"] .cloud,
+      .cloud-group[data-motion="still"] .cloud,
+      .cloud-group[data-motion="sway"] .cloud,
+      .cloud-group[data-motion="pulse"] .cloud {
+        animation: none;
+      }
+
+      .cloud img {
+        display: block;
+        width: 100%;
+        height: auto;
+        user-select: none;
+        -webkit-user-drag: none;
+      }
+
+      .cloud.tilt-soft {
+        animation-name: bob-soft;
+      }
+
+      .cloud.tilt-wide {
+        animation-name: bob-wide;
+      }
+
+      .front {
+        z-index: 3;
+      }
+
+      .ui-overlay {
+        z-index: 5;
+      }
+
+      .ui-dim {
+        inset: auto 0 0;
+        height: 20%;
+        z-index: 4;
+        background: linear-gradient(
+          to bottom,
+          rgba(0, 0, 0, 0) 0%,
+          rgba(0, 0, 0, 0.16) 38%,
+          rgba(0, 0, 0, 0.42) 72%,
+          rgba(0, 0, 0, 0.72) 100%
+        );
+      }
+
+      @keyframes drift {
+        from { transform: translate3d(0, 0, 0); }
+        to { transform: translate3d(-50%, 0, 0); }
+      }
+
+      @keyframes drift-reverse {
+        from { transform: translate3d(-8%, 0, 0); }
+        to { transform: translate3d(-58%, 0, 0); }
+      }
+
+      @keyframes bob {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(2.2%, 5%, 0) scale(1.035); }
+      }
+
+      @keyframes bob-soft {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(-2%, 3.5%, 0) scale(0.985); }
+      }
+
+      @keyframes bob-wide {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(3.2%, 4.8%, 0) scale(1.045); }
+      }
+
+      @keyframes group-float {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        50% { transform: translate3d(0, 14px, 0); }
+      }
+
+      @keyframes group-sway {
+        0%, 100% { transform: translate3d(0, 0, 0); }
+        25% { transform: translate3d(10px, 4px, 0); }
+        50% { transform: translate3d(0, 8px, 0); }
+        75% { transform: translate3d(-10px, 4px, 0); }
+      }
+
+      @keyframes group-pulse {
+        0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+        50% { transform: translate3d(0, 6px, 0) scale(1.035); }
+      }
+
+      @media (max-width: 760px) {
+        :root {
+          --frame-width: min(76vw, 390px);
+        }
+      }
+    `;
+
+    const normalizeExportAssets = (content) => content
+      .replaceAll("clouds%20(2).png", "clouds_1.png")
+      .replaceAll("clouds%20(3).png", "clouds_2.png")
+      .replaceAll("clouds%20(4).png", "clouds_3.png");
+
+    const buildExportHtml = () => normalizeExportAssets(`<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Animation Export</title>
+  <style>${exportStyles}</style>
+</head>
+<body>
+  ${animationFrame.outerHTML}
+</body>
+</html>
+`);
+
+    const collectSettings = () => ({
+      version: 1,
+      scene: {
+        uiVisible: uiVisibilitySelect.value === "on",
+        groupsGlobalVisibility: globalVisibilitySelect.value || "mixed",
+        globalMotion: globalMotionSelect.value || "mixed",
+        globalSpeed: globalSpeedInput.value ? Number(globalSpeedInput.value) : null,
+        dimOverlayHeightPercent: 20
+      },
+      groups: groupConfigs.map((group) => {
+        const card = document.querySelector(`.group-card[data-target="${group.id}"]`);
+        const readInput = (variable) => card.querySelector(`input[data-var="${variable}"]`);
+
+        return {
+          id: group.id,
+          name: group.name,
+          visible: card.querySelector('select[data-visibility-control]').value === "on",
+          motion: card.querySelector('select[data-motion-control]').value,
+          x: Number(readInput("x").value),
+          y: Number(readInput("y").value),
+          height: group.height,
+          scale: Number(readInput("scale").value),
+          opacity: Number(readInput("opacity").value),
+          speed: Number(readInput("speed").value),
+          clouds: group.clouds.map((cloud, index) => ({
+            slot: index + 1,
+            asset: card.querySelector(`select[data-slot="${index + 1}"]`).value,
+            top: cloud.top,
+            left: cloud.left,
+            size: cloud.size,
+            opacity: cloud.opacity,
+            bobSpeed: cloud.bobSpeed,
+            delay: cloud.delay,
+            tilt: cloud.tilt || ""
+          }))
+        };
+      })
+    });
+
+    const buildSettingsJson = () => JSON.stringify(collectSettings(), null, 2);
+
+    const downloadFallback = (content, fileName, mimeType) => {
+      const blob = new Blob([content], { type: mimeType });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    };
+
+    const saveFile = async ({ content, fileName, mimeType, pickerTypeDescription, pickerAccept }) => {
+      try {
+        if (window.showSaveFilePicker) {
+          const handle = await window.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [
+              {
+                description: pickerTypeDescription,
+                accept: pickerAccept
+              }
+            ]
+          });
+
+          const writable = await handle.createWritable();
+          await writable.write(content);
+          await writable.close();
+          return;
+        }
+
+        downloadFallback(content, fileName, mimeType);
+      } catch (error) {
+        if (error && error.name === "AbortError") {
+          return;
+        }
+
+        downloadFallback(content, fileName, mimeType);
+      }
+    };
+
+    cards.forEach((card) => {
+      const target = document.getElementById(card.dataset.target);
+      const inputs = card.querySelectorAll("input[data-var]");
+      const assetSelects = card.querySelectorAll("select[data-slot]");
+      const motionSelect = card.querySelector("select[data-motion-control]");
+      const visibilitySelect = card.querySelector("select[data-visibility-control]");
+
+      inputs.forEach((input) => {
+        input.dataset.defaultValue = input.value;
+        const output = input.nextElementSibling && input.nextElementSibling.tagName === "OUTPUT"
+          ? input.nextElementSibling
+          : null;
+
+        const sync = () => {
+          applyValue(target, input.dataset.var, input.value);
+          if (output) {
+            output.value = formatValue(input.dataset.format, input.value);
+            output.textContent = output.value;
+          }
+          if (input.dataset.var === "speed") {
+            syncGlobalControls();
+          }
+        };
+
+        input.addEventListener("input", sync);
+        input.addEventListener("change", sync);
+        sync();
+      });
+
+      assetSelects.forEach((select) => {
+        select.dataset.defaultValue = select.value;
+
+        const syncSelect = () => {
+          target.querySelectorAll(`.cloud[data-slot="${select.dataset.slot}"]`).forEach((cloud) => {
+            const img = cloud.querySelector("img");
+            if (!select.value) {
+              cloud.style.display = "none";
+              return;
+            }
+
+            cloud.style.display = "";
+            img.src = select.value;
+          });
+        };
+
+        select.addEventListener("change", syncSelect);
+        syncSelect();
+      });
+
+      if (motionSelect) {
+        motionSelect.dataset.defaultValue = motionSelect.value;
+        const syncMotion = () => {
+          target.dataset.motion = motionSelect.value;
+          syncGlobalControls();
+        };
+
+        motionSelect.addEventListener("change", syncMotion);
+        syncMotion();
+      }
+
+      if (visibilitySelect) {
+        visibilitySelect.dataset.defaultValue = visibilitySelect.value;
+        const syncVisibility = () => {
+          target.style.display = visibilitySelect.value === "off" ? "none" : "";
+          syncGlobalControls();
+        };
+
+        visibilitySelect.addEventListener("change", syncVisibility);
+        syncVisibility();
+      }
+
+      card.querySelector(".reset-button").addEventListener("click", () => {
+        resetCard(card);
+        syncGlobalControls();
+      });
+    });
+
+    globalMotionSelect.addEventListener("change", () => {
+      if (!globalMotionSelect.value) {
+        return;
+      }
+
+      getMotionSelects().forEach((select) => {
+        select.value = globalMotionSelect.value;
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      });
+    });
+
+    const syncAllSpeeds = () => {
+      if (!globalSpeedInput.value) {
+        return;
+      }
+
+      getSpeedInputs().forEach((input) => {
+        input.value = globalSpeedInput.value;
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      });
+
+      syncGlobalControls();
+    };
+
+    globalSpeedInput.addEventListener("input", syncAllSpeeds);
+    globalSpeedInput.addEventListener("change", syncAllSpeeds);
+
+    globalVisibilitySelect.addEventListener("change", () => {
+      if (!globalVisibilitySelect.value) {
+        return;
+      }
+
+      setAllGroupsVisibility(globalVisibilitySelect.value === "on");
+    });
+
+    const syncUiVisibility = () => {
+      const isVisible = uiVisibilitySelect.value !== "off";
+      uiOverlay.style.display = isVisible ? "" : "none";
+      uiDim.style.display = isVisible ? "" : "none";
+    };
+
+    uiVisibilitySelect.dataset.defaultValue = uiVisibilitySelect.value;
+    uiVisibilitySelect.addEventListener("change", syncUiVisibility);
+    syncUiVisibility();
+
+    resetAllButton.addEventListener("click", () => {
+      cards.forEach((card) => resetCard(card));
+      setAllGroupsVisibility(true);
+      uiVisibilitySelect.value = uiVisibilitySelect.dataset.defaultValue;
+      syncUiVisibility();
+      syncGlobalControls();
+    });
+
+    setAllGroupsVisibility(true);
+    syncGlobalControls();
+
+    exportHtmlButton.addEventListener("click", async () => {
+      await saveFile({
+        content: buildExportHtml(),
+        fileName: "cloud-animation-export.html",
+        mimeType: "text/html;charset=utf-8",
+        pickerTypeDescription: "HTML File",
+        pickerAccept: { "text/html": [".html"] }
+      });
+    });
+
+    exportJsonButton.addEventListener("click", async () => {
+      await saveFile({
+        content: buildSettingsJson(),
+        fileName: "cloud-animation-settings.json",
+        mimeType: "application/json;charset=utf-8",
+        pickerTypeDescription: "JSON File",
+        pickerAccept: { "application/json": [".json"] }
+      });
+    });
+  </script>
+</body>
+</html>

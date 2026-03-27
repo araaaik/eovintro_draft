@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Layers Animation</title>
+  <style>
+    :root {
+      --page-bg: #000;
+      --frame-width: min(34vw, 380px);
+      --frame-radius: 28px;
+      --frame-shadow: 0 24px 56px rgba(0, 0, 0, 0.52);
+      --sky-height: 52%;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      display: grid;
+      place-items: center;
+      overflow: hidden;
+      background: var(--page-bg);
+      font-family: "Trebuchet MS", "Avenir Next", "Segoe UI", sans-serif;
+    }
+
+    .scene-shell {
+      width: min(100%, 960px);
+      padding: 32px;
+      display: grid;
+      place-items: center;
+    }
+
+    .frame {
+      position: relative;
+      width: var(--frame-width);
+      aspect-ratio: 9 / 16;
+      overflow: hidden;
+      border-radius: var(--frame-radius);
+      background: #050505;
+      box-shadow: var(--frame-shadow);
+      isolation: isolate;
+    }
+
+    .layer-base {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      -webkit-user-drag: none;
+      pointer-events: none;
+    }
+
+    .cloud-field {
+      position: absolute;
+      inset: 0 0 auto;
+      height: var(--sky-height);
+      z-index: 2;
+      overflow: hidden;
+      pointer-events: none;
+      -webkit-mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.99) 34%,
+        rgba(0, 0, 0, 0.9) 54%,
+        rgba(0, 0, 0, 0.65) 72%,
+        rgba(0, 0, 0, 0.26) 88%,
+        rgba(0, 0, 0, 0.05) 97%,
+        rgba(0, 0, 0, 0) 100%
+      );
+      mask-image: linear-gradient(
+        to bottom,
+        rgba(0, 0, 0, 1) 0%,
+        rgba(0, 0, 0, 0.99) 34%,
+        rgba(0, 0, 0, 0.9) 54%,
+        rgba(0, 0, 0, 0.65) 72%,
+        rgba(0, 0, 0, 0.26) 88%,
+        rgba(0, 0, 0, 0.05) 97%,
+        rgba(0, 0, 0, 0) 100%
+      );
+    }
+
+    .lane {
+      position: absolute;
+      left: 0;
+      width: 220%;
+      height: var(--lane-height);
+      display: flex;
+      top: var(--lane-top);
+      opacity: var(--lane-opacity);
+      will-change: transform;
+      animation: drift var(--lane-speed) linear infinite;
+    }
+
+    .lane.reverse {
+      animation-name: drift-reverse;
+    }
+
+    .strip {
+      position: relative;
+      flex: 0 0 50%;
+      height: 100%;
+    }
+
+    .cloud {
+      position: absolute;
+      top: var(--top);
+      left: var(--left);
+      width: var(--size);
+      opacity: var(--opacity);
+      transform-origin: center center;
+      filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.14));
+      animation: bob var(--bob-speed) ease-in-out infinite;
+      animation-delay: var(--delay);
+    }
+
+    .cloud img {
+      display: block;
+      width: 100%;
+      height: auto;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .cloud.tilt-soft {
+      animation-name: bob-soft;
+    }
+
+    .cloud.tilt-wide {
+      animation-name: bob-wide;
+    }
+
+    .front {
+      z-index: 3;
+    }
+
+    @keyframes drift {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(-50%, 0, 0); }
+    }
+
+    @keyframes drift-reverse {
+      from { transform: translate3d(-8%, 0, 0); }
+      to { transform: translate3d(-58%, 0, 0); }
+    }
+
+    @keyframes bob {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(2.2%, 5%, 0) scale(1.035); }
+    }
+
+    @keyframes bob-soft {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(-2%, 3.5%, 0) scale(0.98); }
+    }
+
+    @keyframes bob-wide {
+      0%, 100% { transform: translate3d(0, 0, 0) scale(1); }
+      50% { transform: translate3d(3.2%, 4.8%, 0) scale(1.045); }
+    }
+
+    @media (max-width: 760px) {
+      :root {
+        --frame-width: min(76vw, 380px);
+      }
+
+      .scene-shell {
+        padding: 20px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="scene-shell">
+    <section class="frame" aria-label="Cloud animation">
+      <img class="layer-base" src="./back.png" alt="Back layer">
+
+      <div class="cloud-field" aria-hidden="true">
+        <div class="lane" style="--lane-top: 10%; --lane-height: 28%; --lane-opacity: 0.74; --lane-speed: 176s;">
+          <div class="strip">
+            <div class="cloud" style="--top: 8%; --left: 4%; --size: 60%; --opacity: 0.78; --bob-speed: 19s; --delay: -11s;">
+              <img src="./clouds%20(3).png" alt="">
+            </div>
+            <div class="cloud tilt-soft" style="--top: 2%; --left: 54%; --size: 66%; --opacity: 0.74; --bob-speed: 14s; --delay: -3s;">
+              <img src="./clouds%20(2).png" alt="">
+            </div>
+          </div>
+          <div class="strip">
+            <div class="cloud" style="--top: 8%; --left: 4%; --size: 60%; --opacity: 0.78; --bob-speed: 19s; --delay: -11s;">
+              <img src="./clouds%20(3).png" alt="">
+            </div>
+            <div class="cloud tilt-soft" style="--top: 2%; --left: 54%; --size: 66%; --opacity: 0.74; --bob-speed: 14s; --delay: -3s;">
+              <img src="./clouds%20(2).png" alt="">
+            </div>
+          </div>
+        </div>
+
+        <div class="lane reverse" style="--lane-top: 28%; --lane-height: 36%; --lane-opacity: 0.94; --lane-speed: 132s;">
+          <div class="strip">
+            <div class="cloud tilt-wide" style="--top: 4%; --left: 0%; --size: 44%; --opacity: 0.92; --bob-speed: 18s; --delay: -8s;">
+              <img src="./clouds%20(4).png" alt="">
+            </div>
+            <div class="cloud tilt-soft" style="--top: 24%; --left: 34%; --size: 50%; --opacity: 0.82; --bob-speed: 12s; --delay: -2s;">
+              <img src="./clouds%20(2).png" alt="">
+            </div>
+            <div class="cloud" style="--top: -2%; --left: 68%; --size: 42%; --opacity: 0.86; --bob-speed: 20s; --delay: -13s;">
+              <img src="./clouds%20(3).png" alt="">
+            </div>
+          </div>
+          <div class="strip">
+            <div class="cloud tilt-wide" style="--top: 4%; --left: 0%; --size: 44%; --opacity: 0.92; --bob-speed: 18s; --delay: -8s;">
+              <img src="./clouds%20(4).png" alt="">
+            </div>
+            <div class="cloud tilt-soft" style="--top: 24%; --left: 34%; --size: 50%; --opacity: 0.82; --bob-speed: 12s; --delay: -2s;">
+              <img src="./clouds%20(2).png" alt="">
+            </div>
+            <div class="cloud" style="--top: -2%; --left: 68%; --size: 42%; --opacity: 0.86; --bob-speed: 20s; --delay: -13s;">
+              <img src="./clouds%20(3).png" alt="">
+            </div>
+          </div>
+        </div>
+
+        <div class="lane" style="--lane-top: 46%; --lane-height: 34%; --lane-opacity: 0.9; --lane-speed: 146s;">
+          <div class="strip">
+            <div class="cloud tilt-soft" style="--top: 4%; --left: 6%; --size: 50%; --opacity: 0.82; --bob-speed: 14s; --delay: -4s;">
+              <img src="./clouds%20(2).png" alt="">
+            </div>
+            <div class="cloud" style="--top: 18%; --left: 34%; --size: 52%; --opacity: 0.86; --bob-speed: 17s; --delay: -10s;">
+              <img src="./clouds%20(3).png" alt="">
+            </div>
+            <div class="cloud tilt-wide" style="--top: -2%; --left: 68%; --size: 44%; --opacity: 0.9; --bob-speed: 21s; --delay: -15s;">
+              <img src="./clouds%20(4).png" alt="">
+            </div>
+          </div>
+          <div class="strip">
+            <div class="cloud tilt-soft" style="--top: 4%; --left: 6%; --size: 50%; --opacity: 0.82; --bob-speed: 14s; --delay: -4s;">
+              <img src="./clouds%20(2).png" alt="">
+            </div>
+            <div class="cloud" style="--top: 18%; --left: 34%; --size: 52%; --opacity: 0.86; --bob-speed: 17s; --delay: -10s;">
+              <img src="./clouds%20(3).png" alt="">
+            </div>
+            <div class="cloud tilt-wide" style="--top: -2%; --left: 68%; --size: 44%; --opacity: 0.9; --bob-speed: 21s; --delay: -15s;">
+              <img src="./clouds%20(4).png" alt="">
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <img class="layer-base front" src="./front.png" alt="Front layer">
+    </section>
+  </main>
+</body>
+</html>
