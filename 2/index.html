@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Elioris Intro</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@500;700&family=EB+Garamond:wght@400;500;600&family=Manrope:wght@500;600;700&display=swap');
+
+  :root {
+    --bg-top: #09111b;
+    --bg-bottom: #030507;
+    --panel: rgba(8, 11, 15, 0.72);
+    --line: rgba(255, 255, 255, 0.12);
+    --text: #f2eee6;
+    --muted: rgba(242, 238, 230, 0.72);
+    --accent: #d9bc82;
+    --shadow: 0 24px 60px rgba(0, 0, 0, 0.4);
+    --phone-width: min(100vw - 32px, 405px);
+    --phone-height: min(calc(100vh - 96px), 720px);
+  }
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    margin: 0;
+    min-height: 100%;
+  }
+
+  body {
+    display: grid;
+    place-items: center;
+    padding: 24px 16px;
+    font-family: 'Manrope', sans-serif;
+    color: var(--text);
+    background:
+      radial-gradient(circle at top left, rgba(120, 152, 210, 0.14), transparent 28%),
+      radial-gradient(circle at bottom right, rgba(217, 188, 130, 0.08), transparent 26%),
+      linear-gradient(180deg, var(--bg-top) 0%, var(--bg-bottom) 100%);
+  }
+
+  .shell {
+    width: min(100%, 980px);
+    display: grid;
+    gap: 18px;
+    justify-items: center;
+  }
+
+  .frame {
+    position: relative;
+    width: var(--phone-width);
+    height: var(--phone-height);
+    min-height: 560px;
+    padding: 5px;
+    border-radius: 26px;
+    background: linear-gradient(180deg, rgba(37, 43, 55, 0.78) 0%, rgba(7, 10, 15, 0.92) 100%);
+    box-shadow: var(--shadow);
+  }
+
+  .screen {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    overflow: hidden;
+    border-radius: 21px;
+    background: #040608;
+  }
+
+  .slides {
+    position: absolute;
+    inset: 0;
+  }
+
+  .slide {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 520ms ease;
+  }
+
+  .slide.is-active {
+    opacity: 1;
+    pointer-events: auto;
+  }
+
+  .image-wrap,
+  .backdrop,
+  .artwork {
+    position: absolute;
+    inset: 0;
+  }
+
+  .backdrop {
+    width: calc(100% + 20%);
+    height: calc(100% + 20%);
+    inset: -10%;
+    object-fit: cover;
+    filter: blur(20px) brightness(0.44) saturate(0.9);
+    transform: scale(1.04);
+  }
+
+  .artwork {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    object-position: center center;
+    filter: drop-shadow(0 20px 32px rgba(0, 0, 0, 0.34));
+  }
+
+  .slide::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(4, 8, 12, 0.12) 0%, rgba(4, 8, 12, 0.12) 44%, rgba(4, 8, 12, 0.88) 100%);
+    pointer-events: none;
+  }
+
+  .caption {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 2;
+    padding: 170px 24px 28px;
+    background: linear-gradient(180deg, transparent 0%, rgba(4, 8, 12, 0.12) 28%, rgba(4, 8, 12, 0.78) 72%, rgba(4, 8, 12, 0.98) 100%);
+    text-align: center;
+  }
+
+  .caption-line {
+    display: block;
+    font-family: 'EB Garamond', serif;
+    font-size: 24px;
+    line-height: 1.34;
+    text-shadow: 0 2px 16px rgba(0, 0, 0, 0.58);
+  }
+
+  .caption-line + .caption-line {
+    margin-top: 0.18em;
+  }
+
+  .caption-line.is-final {
+    margin-top: 6px;
+    font-family: 'Cinzel', serif;
+    font-size: 18px;
+    color: #f7ead0;
+  }
+
+  .slide--ending .caption {
+    padding-top: 192px;
+  }
+
+  .slide--ending .caption-line {
+    max-width: none;
+    margin-left: 0;
+    margin-right: 0;
+    font-size: 23px;
+    line-height: 1.3;
+    text-wrap: normal;
+  }
+
+  .slide--ending .caption-line + .caption-line {
+    margin-top: 0.22em;
+  }
+
+  .slide--ending .caption-line:not(.is-final) {
+    white-space: nowrap;
+  }
+
+  .slide--ending .caption-line.is-final {
+    max-width: 26ch;
+    margin-left: auto;
+    margin-right: auto;
+    margin-top: 18px;
+    font-size: 23px;
+    line-height: 1.3;
+    letter-spacing: 0.03em;
+    white-space: normal;
+    text-wrap: balance;
+  }
+
+  .ending-cta {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 0;
+    margin-top: 28px;
+    padding: 14px 22px;
+    border: 1px solid rgba(217, 188, 130, 0.62);
+    border-radius: 999px;
+    background:
+      linear-gradient(180deg, rgba(217, 188, 130, 0.18) 0%, rgba(217, 188, 130, 0.06) 100%),
+      rgba(8, 11, 16, 0.66);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 245, 222, 0.2),
+      0 16px 34px rgba(0, 0, 0, 0.3);
+    color: #f7ead0;
+    font-family: 'Cinzel', serif;
+    font-size: 15px;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    text-shadow: 0 2px 12px rgba(0, 0, 0, 0.32);
+    cursor: default;
+    backdrop-filter: blur(10px);
+  }
+
+  .nav {
+    position: absolute;
+    top: 50%;
+    z-index: 3;
+    width: 72px;
+    height: 96px;
+    margin-top: -48px;
+    border: 0;
+    background: none;
+    color: rgba(245, 236, 219, 0.96);
+    cursor: pointer;
+    transition: transform 0.2s ease, opacity 0.2s ease;
+  }
+
+  .nav:hover {
+    transform: scale(1.05);
+  }
+
+  .nav.left {
+    left: 2px;
+  }
+
+  .nav.right {
+    right: 2px;
+  }
+
+  .nav svg {
+    width: 100%;
+    height: 100%;
+    display: block;
+    filter: drop-shadow(0 10px 20px rgba(0, 0, 0, 0.44));
+  }
+
+  .tap-zones {
+    position: absolute;
+    inset: 0;
+    z-index: 1;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .tap-zone {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .tap-zone.is-hidden,
+  .nav.is-hidden {
+    opacity: 0;
+    pointer-events: none;
+  }
+
+  .tap-zone:focus-visible,
+  .nav:focus-visible {
+    outline: 1px solid rgba(217, 188, 130, 0.9);
+    outline-offset: -1px;
+  }
+
+  @media (max-width: 720px) {
+    body {
+      padding: 16px 12px 20px;
+    }
+
+    .frame {
+      min-height: 0;
+      height: auto;
+      aspect-ratio: 9 / 16;
+    }
+
+    .caption {
+      padding: 156px 22px 26px;
+    }
+
+    .caption-line {
+      font-size: 22px;
+    }
+
+    .slide--ending .caption {
+      padding-top: 176px;
+    }
+
+    .slide--ending .caption-line {
+      font-size: 21px;
+    }
+
+    .slide--ending .caption-line.is-final {
+      font-size: 21px;
+      max-width: 24ch;
+    }
+
+    .ending-cta {
+      margin-top: 24px;
+      padding: 13px 20px;
+      font-size: 14px;
+    }
+  }
+</style>
+</head>
+<body>
+  <main class="shell">
+    <section class="frame" aria-label="Intro viewer">
+      <div class="screen" id="screen">
+        <div class="slides" id="slides"></div>
+
+        <div class="tap-zones" aria-hidden="true">
+          <button class="tap-zone" id="prevZone" type="button" tabindex="-1" aria-label="Previous slide"></button>
+          <button class="tap-zone" id="nextZone" type="button" tabindex="-1" aria-label="Next slide"></button>
+        </div>
+
+        <button class="nav left" id="prevBtn" type="button" aria-label="Previous slide">
+          <svg viewBox="0 0 64 84" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M40 14L22 42L40 70" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M46 10L26 42L46 74" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+          </svg>
+        </button>
+
+        <button class="nav right" id="nextBtn" type="button" aria-label="Next slide">
+          <svg viewBox="0 0 64 84" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true">
+            <path d="M24 14L42 42L24 70" stroke="currentColor" stroke-width="4.5" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M18 10L38 42L18 74" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" opacity="0.4"/>
+          </svg>
+        </button>
+      </div>
+    </section>
+  </main>
+
+<script>
+  (function () {
+    'use strict';
+
+    const slides = [
+      {
+        image: './1.jpeg',
+        alt: 'The War of the Titans',
+        lines: [
+          'Long ago, the War of the Titans was fought across Elioris.',
+          'Ancient powers battled for the fate of the world.'
+        ]
+      },
+      {
+        image: './2.jpeg',
+        alt: 'Darkness cast down',
+        lines: [
+          'Darkness was defeated, and the Titans fell into sleep.',
+          'After that, a new age began for mortals.'
+        ]
+      },
+      {
+        image: './3.jpeg',
+        alt: 'Elioris flourishes',
+        lines: [
+          'Ages passed, and Elioris flourished.',
+          'Humans and the Exalted built cities, guarded knowledge, and lived in peace.'
+        ]
+      },
+      {
+        image: './4.jpeg',
+        alt: 'The fallen Titan returns',
+        lines: [
+          'But peace did not last forever.',
+          'The cult of the Unified revived a fallen Titan, and from that day, danger returned to Elioris.'
+        ]
+      },
+      {
+        image: './5.jpg',
+        alt: 'The call to the hero',
+        lines: [
+          'And yet hope remains.',
+          'Your journey begins now.'
+        ],
+        ctaLabel: 'START'
+      }
+    ];
+
+    const slidesRoot = document.getElementById('slides');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const prevZone = document.getElementById('prevZone');
+    const nextZone = document.getElementById('nextZone');
+
+    let currentSlide = 0;
+    let touchStartX = 0;
+    let touchDeltaX = 0;
+
+    function renderCaption(lines) {
+      return lines.map(function (line, index) {
+        const finalClass = index === lines.length - 1 && lines.length > 2 ? ' is-final' : '';
+        return '<span class="caption-line' + finalClass + '">' + line + '</span>';
+      }).join('');
+    }
+
+    function buildSlides() {
+      slidesRoot.innerHTML = slides.map(function (slide, index) {
+        const activeClass = index === 0 ? ' is-active' : '';
+        const endingClass = index === slides.length - 1 ? ' slide--ending' : '';
+        return (
+          '<article class="slide' + activeClass + endingClass + '" data-slide-index="' + index + '">' +
+            '<div class="image-wrap">' +
+              '<img class="backdrop" src="' + slide.image + '" alt="" aria-hidden="true">' +
+              '<img class="artwork" src="' + slide.image + '" alt="' + slide.alt + '">' +
+            '</div>' +
+            '<div class="caption">' +
+              renderCaption(slide.lines) +
+              (slide.ctaLabel ? '<button class="ending-cta" type="button" aria-label="' + slide.ctaLabel + '">' + slide.ctaLabel + '</button>' : '') +
+            '</div>' +
+          '</article>'
+        );
+      }).join('');
+    }
+
+    function updateUI() {
+      const allSlides = slidesRoot.querySelectorAll('.slide');
+
+      allSlides.forEach(function (slide, index) {
+        slide.classList.toggle('is-active', index === currentSlide);
+      });
+
+      const isFirst = currentSlide === 0;
+      const isLast = currentSlide === slides.length - 1;
+
+      prevBtn.classList.toggle('is-hidden', isFirst);
+      prevZone.classList.toggle('is-hidden', isFirst);
+      nextBtn.classList.toggle('is-hidden', isLast);
+      nextZone.classList.toggle('is-hidden', isLast);
+    }
+
+    function showSlide(index) {
+      if (index < 0 || index >= slides.length) return;
+      currentSlide = index;
+      updateUI();
+    }
+
+    function nextSlide() {
+      showSlide(currentSlide + 1);
+    }
+
+    function prevSlide() {
+      showSlide(currentSlide - 1);
+    }
+
+    function preloadImages() {
+      slides.forEach(function (slide) {
+        const image = new Image();
+        image.src = slide.image;
+      });
+    }
+
+    prevBtn.addEventListener('click', prevSlide);
+    nextBtn.addEventListener('click', nextSlide);
+    prevZone.addEventListener('click', prevSlide);
+    nextZone.addEventListener('click', nextSlide);
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'ArrowLeft') {
+        event.preventDefault();
+        prevSlide();
+      }
+      if (event.key === 'ArrowRight' || event.key === ' ') {
+        event.preventDefault();
+        nextSlide();
+      }
+    });
+
+    document.getElementById('screen').addEventListener('touchstart', function (event) {
+      touchStartX = event.changedTouches[0].clientX;
+      touchDeltaX = 0;
+    }, { passive: true });
+
+    document.getElementById('screen').addEventListener('touchmove', function (event) {
+      touchDeltaX = event.changedTouches[0].clientX - touchStartX;
+    }, { passive: true });
+
+    document.getElementById('screen').addEventListener('touchend', function () {
+      if (Math.abs(touchDeltaX) < 32) return;
+      if (touchDeltaX > 0) prevSlide();
+      if (touchDeltaX < 0) nextSlide();
+    }, { passive: true });
+
+    buildSlides();
+    preloadImages();
+    updateUI();
+  })();
+</script>
+</body>
+</html>
