@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Анимация облаков</title>
+<style>
+  body {
+    margin: 0;
+    padding: 0;
+    background-color: #000;
+    display: flex;
+    justify-content: flex-start;
+    align-items: center;
+    height: 100vh;
+    overflow-x: auto;
+    overflow-y: hidden;
+    gap: 12px;
+    padding: 0 20px;
+  }
+
+  /* Основной контейнер 9:16 */
+  .container {
+    height: 72vh;
+    width: calc(72vh * 9 / 16);
+    flex-shrink: 0;
+    position: relative;
+    overflow: hidden;
+    background-color: #111;
+    border-radius: 12px;
+    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.8), 0 0 1px rgba(255,255,255,0.2);
+    container-type: inline-size;
+  }
+
+  .layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-size: cover;
+    background-position: center bottom;
+    pointer-events: none;
+  }
+
+  .bg-sky {
+    background-image: url('back.png');
+    z-index: 1;
+  }
+
+  .clouds-area {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 45%;
+    z-index: 2;
+  }
+
+  .fg-city {
+    background-image: url('front.png');
+    z-index: 5;
+  }
+
+  .ui-layer {
+    background-image: url('ui.png');
+    z-index: 10;
+  }
+
+  .cloud-track {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+  }
+
+  .cloud {
+    position: absolute;
+    transform: translate3d(100cqi, 0, 0);
+    background-size: contain;
+    background-repeat: no-repeat;
+    background-position: center;
+    will-change: transform;
+  }
+
+  @keyframes driftCloud {
+    0% { transform: translate3d(120cqi, 0, 0); }
+    100% { transform: translate3d(-100%, 0, 0); }
+  }
+
+  @keyframes driftCloudBob {
+    0% { transform: translate3d(120cqi, 0, 0); }
+    25% { transform: translate3d(60cqi, -10px, 0); }
+    50% { transform: translate3d(10cqi, 5px, 0); }
+    75% { transform: translate3d(-30cqi, -10px, 0); }
+    100% { transform: translate3d(-100%, 0, 0); }
+  }
+
+  @keyframes driftCloudDiagonal {
+    0% { transform: translate3d(120cqi, -20px, 0); }
+    100% { transform: translate3d(-100%, 20px, 0); }
+  }
+</style>
+</head>
+<body>
+
+<div class="container" id="variant1">
+  <div class="layer bg-sky"></div>
+  <div class="clouds-area"></div>
+  <div class="layer fg-city"></div>
+  <div class="layer ui-layer"></div>
+</div>
+
+<div class="container" id="variant2">
+  <div class="layer bg-sky"></div>
+  <div class="clouds-area"></div>
+  <div class="layer fg-city"></div>
+  <div class="layer ui-layer"></div>
+</div>
+
+<div class="container" id="variant3">
+  <div class="layer bg-sky"></div>
+  <div class="clouds-area"></div>
+  <div class="layer fg-city"></div>
+  <div class="layer ui-layer"></div>
+</div>
+
+<div class="container" id="variant4">
+  <div class="layer bg-sky"></div>
+  <div class="clouds-area"></div>
+  <div class="layer fg-city"></div>
+  <div class="layer ui-layer"></div>
+</div>
+
+<div class="container" id="variant5">
+  <div class="layer bg-sky"></div>
+  <div class="clouds-area"></div>
+  <div class="layer fg-city"></div>
+  <div class="layer ui-layer"></div>
+</div>
+
+<script>
+  const cloudsAssets = [
+    'clouds_new/clouds_1.png',
+    'clouds_new/clouds_2.png',
+    'clouds_new/clouds_3.png',
+    'clouds_new/clouds_4.png',
+    'clouds_new/clouds_5.png',
+    'clouds_new/clouds_6.png',
+    'clouds_new/clouds_8.png',
+    'clouds_new/clouds_9.png'
+  ];
+
+  const variants = {
+    1: {
+      tracks: [
+        { opacity: 0.3, timeBase: 140, clouds: [0, 1] },
+        { opacity: 0.5, timeBase: 80, clouds: [2, 3, 4, 5] },
+        { opacity: 0.8, timeBase: 40, clouds: [6, 7] }
+      ],
+      anim: 'driftCloud',
+      scaleBase: 0.8,
+      densityMultiplier: 1
+    },
+    2: {
+      tracks: [
+        { opacity: 0.3, timeBase: 160, clouds: [0, 1] },
+        { opacity: 0.5, timeBase: 100, clouds: [2, 3] },
+        { opacity: 0.7, timeBase: 65, clouds: [4, 5] },
+        { opacity: 1.0, timeBase: 30, clouds: [6, 7] }
+      ],
+      anim: 'driftCloud',
+      scaleBase: 0.7,
+      densityMultiplier: 1
+    },
+    3: {
+      tracks: [
+        { opacity: 0.6, timeBase: 180, clouds: [0, 1, 2] },
+        { opacity: 0.85, timeBase: 130, clouds: [3, 4, 5, 6] },
+        { opacity: 1.0, timeBase: 90, clouds: [7] }
+      ],
+      anim: 'driftCloud',
+      scaleBase: 0.95,
+      densityMultiplier: 2
+    },
+    4: {
+      tracks: [
+        { opacity: 0.4, timeBase: 110, clouds: [0, 1, 2] },
+        { opacity: 0.7, timeBase: 65, clouds: [3, 4, 5, 6] },
+        { opacity: 1.0, timeBase: 35, clouds: [7] }
+      ],
+      anim: 'driftCloudBob',
+      scaleBase: 0.75,
+      densityMultiplier: 2
+    },
+    5: {
+      tracks: [
+        { opacity: 0.35, timeBase: 118, clouds: [0, 1, 2, 3] },
+        { opacity: 0.65, timeBase: 72, clouds: [4, 5, 6] },
+        { opacity: 0.9, timeBase: 35, clouds: [7] }
+      ],
+      anim: 'driftCloud',
+      scaleBase: 0.75,
+      densityMultiplier: 2
+    }
+  };
+
+  let currentSeed = 1;
+
+  function seededRandom() {
+    currentSeed = (currentSeed * 9301 + 49297) % 233280;
+    return currentSeed / 233280;
+  }
+
+  function random(min, max) {
+    return seededRandom() * (max - min) + min;
+  }
+
+  function renderVariant(id) {
+    currentSeed = id * 1337;
+
+    const v = variants[id];
+    const container = document.querySelector('#variant' + id + ' .clouds-area');
+    container.innerHTML = '';
+
+    v.tracks.forEach((track, i) => {
+      const trackDiv = document.createElement('div');
+      trackDiv.className = 'cloud-track';
+      trackDiv.style.opacity = track.opacity;
+
+      let cloudsToRender = [];
+      const multiplier = v.densityMultiplier || 1;
+      for (let m = 0; m < multiplier; m++) {
+        cloudsToRender = cloudsToRender.concat(track.clouds);
+      }
+
+      const count = cloudsToRender.length || 1;
+
+      cloudsToRender.forEach((cloudIdx, idx) => {
+        const cloudImg = document.createElement('img');
+        cloudImg.src = cloudsAssets[cloudIdx];
+        cloudImg.className = 'cloud';
+
+        let layerScale = 1.0;
+        if (v.tracks.length >= 3) {
+          if (i === 0) layerScale = 1.15;
+          else if (i === v.tracks.length - 1) layerScale = 0.8;
+          else layerScale = 0.95;
+        }
+
+        const trackScale = (track.scaleBase || 1.0) * layerScale;
+        const sizePercent = random(35, 75) * trackScale * v.scaleBase;
+        cloudImg.style.width = sizePercent + '%';
+
+        const vSpread = v.spread || [5, 100];
+        cloudImg.style.top = random(vSpread[0], vSpread[1]) + '%';
+
+        const duration = track.timeBase + random(-track.timeBase * 0.15, track.timeBase * 0.15);
+
+        const delaySpread = duration / count;
+        const myDelayBase = idx * delaySpread;
+        const delay = -(myDelayBase + random(-delaySpread * 0.3, delaySpread * 0.3));
+
+        cloudImg.style.animation = `${v.anim} ${duration}s linear ${delay}s infinite`;
+
+        trackDiv.appendChild(cloudImg);
+      });
+
+      container.appendChild(trackDiv);
+    });
+  }
+
+  window.addEventListener('DOMContentLoaded', () => {
+    for (let i = 1; i <= 5; i++) {
+      renderVariant(i);
+    }
+  });
+</script>
+
+</body>
+</html>

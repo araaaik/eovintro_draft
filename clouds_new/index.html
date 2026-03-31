@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Cloud Studies</title>
+  <style>
+    :root {
+      color-scheme: dark;
+      --panel-width: min(1920px, calc(100vw - 48px));
+      --card-radius: 28px;
+      --card-shadow: 0 28px 70px rgba(0, 0, 0, 0.45);
+      --animation-speed: 0.7;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at top, rgba(44, 53, 85, 0.18), transparent 28%),
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.02), transparent 14%),
+        #000;
+      color: #f3f6ff;
+      font-family: Arial, sans-serif;
+    }
+
+    .gallery {
+      width: var(--panel-width);
+      margin: 0 auto;
+      padding: 32px 0 40px;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+      gap: 24px;
+      align-items: start;
+      justify-items: center;
+    }
+
+    .scene {
+      width: 100%;
+      max-width: 300px;
+    }
+
+    .scene:not(.scene--keep) {
+      display: none;
+    }
+
+    .scene__label {
+      margin: 0 0 12px;
+      padding: 0 4px;
+      font-size: 12px;
+      line-height: 1.45;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: rgba(234, 240, 255, 0.88);
+    }
+
+    .scene--keep .scene__label {
+      display: none;
+    }
+
+    .scene__name {
+      display: block;
+      margin-bottom: 4px;
+      font-size: 13px;
+      letter-spacing: 0.12em;
+    }
+
+    .scene__note {
+      display: block;
+      color: rgba(234, 240, 255, 0.56);
+    }
+
+    .stage {
+      position: relative;
+      width: 100%;
+      aspect-ratio: 9 / 16;
+      overflow: hidden;
+      border-radius: var(--card-radius);
+      background: #050608;
+      box-shadow: var(--card-shadow);
+      isolation: isolate;
+    }
+
+    .layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+    }
+
+    .layer img {
+      display: block;
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      user-select: none;
+      -webkit-user-drag: none;
+    }
+
+    .layer--back {
+      z-index: 1;
+    }
+
+    .layer--clouds {
+      z-index: 2;
+      inset: 0;
+      overflow: hidden;
+      isolation: isolate;
+    }
+
+    .layer--clouds::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background:
+        linear-gradient(to bottom, rgba(255, 255, 255, 0.03), transparent 16%),
+        linear-gradient(to bottom, transparent 58%, rgba(122, 170, 226, 0.06) 74%, transparent 96%);
+      z-index: 0;
+      pointer-events: none;
+    }
+
+    .layer--front {
+      z-index: 3;
+    }
+
+    .layer--ui {
+      z-index: 4;
+    }
+
+    .layer--ui img {
+      object-fit: contain;
+      object-position: top center;
+    }
+
+    .cloud-lane {
+      position: absolute;
+      left: -14%;
+      width: 128%;
+      top: var(--lane-top);
+      height: var(--lane-height);
+      opacity: 1;
+      z-index: var(--lane-z, 1);
+      overflow: visible;
+      isolation: isolate;
+      mix-blend-mode: normal;
+      filter:
+        blur(var(--lane-blur, 0px))
+        drop-shadow(0 8px 16px rgba(219, 234, 255, 0.12));
+      mask-image: linear-gradient(to bottom, transparent 0%, black 1%, black 99%, transparent 100%);
+      -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 1%, black 99%, transparent 100%);
+    }
+
+    .cloud-track {
+      position: absolute;
+      inset: 0;
+      width: 200%;
+      display: flex;
+      animation: drift calc(var(--duration, 80s) * var(--animation-speed)) linear infinite;
+      animation-delay: var(--delay, 0s);
+      will-change: transform;
+    }
+
+    .cloud-group {
+      position: relative;
+      flex: 0 0 50%;
+      height: 100%;
+    }
+
+    .cloud {
+      position: absolute;
+      left: var(--left);
+      top: var(--top);
+      width: var(--width);
+      opacity: var(--cloud-opacity, var(--opacity, 0.88));
+    }
+
+    .cloud img {
+      display: block;
+      width: 100%;
+      height: auto;
+      object-fit: contain;
+      filter: brightness(1.05) contrast(1.02);
+    }
+
+    .clouds-3 > .cloud-lane:nth-of-type(1) {
+      top: 5% !important;
+      height: 27% !important;
+      --cloud-opacity: 0.64 !important;
+    }
+
+    .clouds-3 > .cloud-lane:nth-of-type(2) {
+      top: 21% !important;
+      height: 28% !important;
+      --cloud-opacity: 0.78 !important;
+    }
+
+    .clouds-3 > .cloud-lane:nth-of-type(3) {
+      top: 39% !important;
+      height: 29% !important;
+      --cloud-opacity: 0.9 !important;
+    }
+
+    .clouds-3 > .cloud-lane:nth-of-type(1) .cloud-track {
+      animation-duration: calc(96s * var(--animation-speed)) !important;
+    }
+
+    .clouds-3 > .cloud-lane:nth-of-type(2) .cloud-track {
+      animation-duration: calc(66s * var(--animation-speed)) !important;
+    }
+
+    .clouds-3 > .cloud-lane:nth-of-type(3) .cloud-track {
+      animation-duration: calc(40s * var(--animation-speed)) !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(1) {
+      top: 4% !important;
+      height: 21% !important;
+      --cloud-opacity: 0.58 !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(2) {
+      top: 17% !important;
+      height: 22% !important;
+      --cloud-opacity: 0.7 !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(3) {
+      top: 30% !important;
+      height: 23% !important;
+      --cloud-opacity: 0.82 !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(4) {
+      top: 44% !important;
+      height: 24% !important;
+      --cloud-opacity: 0.92 !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(1) .cloud-track {
+      animation-duration: calc(108s * var(--animation-speed)) !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(2) .cloud-track {
+      animation-duration: calc(78s * var(--animation-speed)) !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(3) .cloud-track {
+      animation-duration: calc(54s * var(--animation-speed)) !important;
+    }
+
+    .clouds-4 > .cloud-lane:nth-of-type(4) .cloud-track {
+      animation-duration: calc(34s * var(--animation-speed)) !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(1) {
+      top: 4% !important;
+      height: 17% !important;
+      --cloud-opacity: 0.54 !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(2) {
+      top: 15% !important;
+      height: 18% !important;
+      --cloud-opacity: 0.64 !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(3) {
+      top: 27% !important;
+      height: 19% !important;
+      --cloud-opacity: 0.74 !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(4) {
+      top: 39% !important;
+      height: 20% !important;
+      --cloud-opacity: 0.84 !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(5) {
+      top: 51% !important;
+      height: 21% !important;
+      --cloud-opacity: 0.92 !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(1) .cloud-track {
+      animation-duration: calc(116s * var(--animation-speed)) !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(2) .cloud-track {
+      animation-duration: calc(88s * var(--animation-speed)) !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(3) .cloud-track {
+      animation-duration: calc(64s * var(--animation-speed)) !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(4) .cloud-track {
+      animation-duration: calc(44s * var(--animation-speed)) !important;
+    }
+
+    .clouds-5 > .cloud-lane:nth-of-type(5) .cloud-track {
+      animation-duration: calc(28s * var(--animation-speed)) !important;
+    }
+
+    .clouds-v3 > .cloud-lane:nth-of-type(1) {
+      top: 3% !important;
+      height: 17% !important;
+      --cloud-opacity: 0.48 !important;
+    }
+
+    .clouds-v3 > .cloud-lane:nth-of-type(2) {
+      top: 14% !important;
+      height: 18% !important;
+      --cloud-opacity: 0.58 !important;
+    }
+
+    .clouds-v3 > .cloud-lane:nth-of-type(3) {
+      top: 26% !important;
+      height: 19% !important;
+      --cloud-opacity: 0.7 !important;
+    }
+
+    .clouds-v3 > .cloud-lane:nth-of-type(4) {
+      top: 39% !important;
+      height: 20% !important;
+      --cloud-opacity: 0.82 !important;
+    }
+
+    .clouds-v3 > .cloud-lane:nth-of-type(5) {
+      top: 53% !important;
+      height: 20% !important;
+      --cloud-opacity: 0.9 !important;
+    }
+
+    .clouds-v3 > .cloud-lane:nth-of-type(1) .cloud-track { animation-duration: calc(158s * var(--animation-speed)) !important; }
+    .clouds-v3 > .cloud-lane:nth-of-type(2) .cloud-track { animation-duration: calc(102s * var(--animation-speed)) !important; }
+    .clouds-v3 > .cloud-lane:nth-of-type(3) .cloud-track { animation-duration: calc(66s * var(--animation-speed)) !important; }
+    .clouds-v3 > .cloud-lane:nth-of-type(4) .cloud-track { animation-duration: calc(38s * var(--animation-speed)) !important; }
+    .clouds-v3 > .cloud-lane:nth-of-type(5) .cloud-track { animation-duration: calc(24s * var(--animation-speed)) !important; }
+
+    .clouds-v6 > .cloud-lane:nth-of-type(1) {
+      top: 4% !important;
+      height: 17% !important;
+      --cloud-opacity: 0.52 !important;
+    }
+
+    .clouds-v6 > .cloud-lane:nth-of-type(2) {
+      top: 16% !important;
+      height: 18% !important;
+      --cloud-opacity: 0.62 !important;
+    }
+
+    .clouds-v6 > .cloud-lane:nth-of-type(3) {
+      top: 29% !important;
+      height: 19% !important;
+      --cloud-opacity: 0.74 !important;
+    }
+
+    .clouds-v6 > .cloud-lane:nth-of-type(4) {
+      top: 43% !important;
+      height: 20% !important;
+      --cloud-opacity: 0.84 !important;
+    }
+
+    .clouds-v6 > .cloud-lane:nth-of-type(5) {
+      top: 56% !important;
+      height: 18% !important;
+      --cloud-opacity: 0.9 !important;
+    }
+
+    .clouds-v6 > .cloud-lane:nth-of-type(1) .cloud-track { animation-duration: calc(132s * var(--animation-speed)) !important; }
+    .clouds-v6 > .cloud-lane:nth-of-type(2) .cloud-track { animation-duration: calc(96s * var(--animation-speed)) !important; }
+    .clouds-v6 > .cloud-lane:nth-of-type(3) .cloud-track { animation-duration: calc(68s * var(--animation-speed)) !important; }
+    .clouds-v6 > .cloud-lane:nth-of-type(4) .cloud-track { animation-duration: calc(42s * var(--animation-speed)) !important; }
+    .clouds-v6 > .cloud-lane:nth-of-type(5) .cloud-track { animation-duration: calc(28s * var(--animation-speed)) !important; }
+
+    .clouds-v7 > .cloud-lane:nth-of-type(1) {
+      top: 1% !important;
+      height: 24% !important;
+      --cloud-opacity: 0.44 !important;
+    }
+
+    .clouds-v7 > .cloud-lane:nth-of-type(2) {
+      top: 11% !important;
+      height: 24% !important;
+      --cloud-opacity: 0.56 !important;
+    }
+
+    .clouds-v7 > .cloud-lane:nth-of-type(3) {
+      top: 22% !important;
+      height: 25% !important;
+      --cloud-opacity: 0.68 !important;
+    }
+
+    .clouds-v7 > .cloud-lane:nth-of-type(4) {
+      top: 34% !important;
+      height: 25% !important;
+      --cloud-opacity: 0.8 !important;
+    }
+
+    .clouds-v7 > .cloud-lane:nth-of-type(5) {
+      top: 46% !important;
+      height: 24% !important;
+      --cloud-opacity: 0.9 !important;
+    }
+
+    .clouds-v7 > .cloud-lane:nth-of-type(1) .cloud-track { animation-duration: calc(170s * var(--animation-speed)) !important; }
+    .clouds-v7 > .cloud-lane:nth-of-type(2) .cloud-track { animation-duration: calc(110s * var(--animation-speed)) !important; }
+    .clouds-v7 > .cloud-lane:nth-of-type(3) .cloud-track { animation-duration: calc(72s * var(--animation-speed)) !important; }
+    .clouds-v7 > .cloud-lane:nth-of-type(4) .cloud-track { animation-duration: calc(42s * var(--animation-speed)) !important; }
+    .clouds-v7 > .cloud-lane:nth-of-type(5) .cloud-track { animation-duration: calc(24s * var(--animation-speed)) !important; }
+
+    .clouds-v8 > .cloud-lane:nth-of-type(1) {
+      top: 3% !important;
+      height: 23% !important;
+      --cloud-opacity: 0.48 !important;
+    }
+
+    .clouds-v8 > .cloud-lane:nth-of-type(2) {
+      top: 14% !important;
+      height: 24% !important;
+      --cloud-opacity: 0.6 !important;
+    }
+
+    .clouds-v8 > .cloud-lane:nth-of-type(3) {
+      top: 27% !important;
+      height: 25% !important;
+      --cloud-opacity: 0.74 !important;
+    }
+
+    .clouds-v8 > .cloud-lane:nth-of-type(4) {
+      top: 40% !important;
+      height: 26% !important;
+      --cloud-opacity: 0.88 !important;
+    }
+
+    .clouds-v8 > .cloud-lane:nth-of-type(1) .cloud-track { animation-duration: calc(144s * var(--animation-speed)) !important; }
+    .clouds-v8 > .cloud-lane:nth-of-type(2) .cloud-track { animation-duration: calc(92s * var(--animation-speed)) !important; }
+    .clouds-v8 > .cloud-lane:nth-of-type(3) .cloud-track { animation-duration: calc(58s * var(--animation-speed)) !important; }
+    .clouds-v8 > .cloud-lane:nth-of-type(4) .cloud-track { animation-duration: calc(34s * var(--animation-speed)) !important; }
+
+    @keyframes drift {
+      from { transform: translate3d(0, 0, 0); }
+      to { transform: translate3d(-50%, 0, 0); }
+    }
+
+    @media (max-width: 640px) {
+      :root {
+        --panel-width: calc(100vw - 24px);
+        --card-radius: 22px;
+      }
+
+      .gallery {
+        padding-top: 18px;
+        gap: 18px;
+      }
+
+      .scene {
+        max-width: 360px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <main class="gallery" aria-label="Десять вариаций анимации облаков">
+
+
+    <article class="scene">
+      <p class="scene__label">
+        <span class="scene__name">Вариант 3</span>
+        <span class="scene__note">Высокие редкие слои и тяжелая низкая гряда с сильным параллаксом</span>
+      </p>
+      <div class="stage">
+        <div class="layer layer--back"><img src="back.png" alt="Небо"></div>
+        <section class="layer layer--clouds clouds-v3" aria-hidden="true">
+          <div class="cloud-lane" style="--lane-z: 1; --lane-blur: 0.9px;">
+            <div class="cloud-track" style="--delay: -36s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 6%; --top: 14%; --width: 17%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 36%; --top: 4%; --width: 21%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 64%; --top: 8%; --width: 28%;"><img src="clouds_new/Layer%2021.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 9%; --top: 12%; --width: 16%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 42%; --top: 2%; --width: 22%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+                <div class="cloud" style="--left: 70%; --top: 10%; --width: 26%;"><img src="clouds_new/Layer%2026.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 2; --lane-blur: 0.45px;">
+            <div class="cloud-track" style="--delay: -18s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -2%; --top: 18%; --width: 19%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 24%; --top: 8%; --width: 31%;"><img src="clouds_new/Layer%2022.png" alt=""></div>
+                <div class="cloud" style="--left: 63%; --top: 2%; --width: 18%;"><img src="clouds_new/Layer%2015.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 3%; --top: 20%; --width: 17%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 29%; --top: 6%; --width: 29%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+                <div class="cloud" style="--left: 68%; --top: 4%; --width: 20%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 3;">
+            <div class="cloud-track" style="--delay: -11s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -4%; --top: 16%; --width: 24%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 18%; --top: 10%; --width: 40%;"><img src="clouds_new/Layer%2010.png" alt=""></div>
+                <div class="cloud" style="--left: 64%; --top: 2%; --width: 24%;"><img src="clouds_new/Layer%2018.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 0; --top: 18%; --width: 22%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 23%; --top: 8%; --width: 38%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 67%; --top: 4%; --width: 22%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 4;">
+            <div class="cloud-track" style="--delay: -8s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -6%; --top: 12%; --width: 33%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 29%; --top: 6%; --width: 21%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 48%; --top: 0; --width: 44%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -2%; --top: 14%; --width: 31%;"><img src="clouds_new/Layer%2018.png" alt=""></div>
+                <div class="cloud" style="--left: 34%; --top: 4%; --width: 19%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 53%; --top: 2%; --width: 41%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 5; --lane-blur: 0.15px;">
+            <div class="cloud-track" style="--delay: -4s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -9%; --top: 10%; --width: 48%;"><img src="clouds_new/Layer%204.png" alt=""></div>
+                <div class="cloud" style="--left: 43%; --top: 12%; --width: 20%;"><img src="clouds_new/Layer%206.png" alt=""></div>
+                <div class="cloud" style="--left: 58%; --top: 0; --width: 39%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -7%; --top: 10%; --width: 46%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 46%; --top: 14%; --width: 18%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 61%; --top: 2%; --width: 37%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="layer layer--front"><img src="front.png" alt="Горы и замок"></div>
+        <div class="layer layer--ui"><img src="ui.png" alt="Интерфейс"></div>
+      </div>
+    </article>
+
+    <article class="scene scene--keep">
+      <p class="scene__label">
+        <span class="scene__name">Вариант 4</span>
+        <span class="scene__note">Самый насыщенный, с несколькими низкими облачными банками</span>
+      </p>
+      <div class="stage">
+        <div class="layer layer--back"><img src="back.png" alt="Небо"></div>
+        <section class="layer layer--clouds clouds-5" aria-hidden="true">
+          <div class="cloud-lane" style="--lane-top: 9%; --lane-height: 13%; --lane-opacity: 0.23; --lane-z: 1; --lane-blur: 0.8px;">
+            <div class="cloud-track" style="--duration: 102s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 6%; --top: 12%; --width: 17%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 50%; --top: 1%; --width: 35%;"><img src="clouds_new/Layer%2026.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 6%; --top: 12%; --width: 20%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 54%; --top: 2%; --width: 28%;"><img src="clouds_new/Layer%2026.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 21%; --lane-height: 17%; --lane-opacity: 0.35; --lane-z: 2;">
+            <div class="cloud-track" style="--duration: 72s; --delay: -12s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 0; --top: 18%; --width: 16%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 31%; --top: 2%; --width: 15%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 56%; --top: 8%; --width: 41%;"><img src="clouds_new/Layer%2010.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 0; --top: 18%; --width: 25%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 34%; --top: 3%; --width: 22%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 62%; --top: 10%; --width: 31%;"><img src="clouds_new/Layer%2010.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 38%; --lane-height: 16%; --lane-opacity: 0.44; --lane-z: 3;">
+            <div class="cloud-track" style="--duration: 54s; --delay: -20s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 5%; --top: 0; --width: 41%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 61%; --top: 18%; --width: 16%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 8%; --top: 0; --width: 32%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 56%; --top: 18%; --width: 20%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 49%; --lane-height: 20%; --lane-opacity: 0.6; --lane-z: 4; --lane-blur: 0.1px;">
+            <div class="cloud-track" style="--duration: 44s; --delay: -5s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -2%; --top: 4%; --width: 52%;"><img src="clouds_new/Layer%204.png" alt=""></div>
+                <div class="cloud" style="--left: 58%; --top: 12%; --width: 18%;"><img src="clouds_new/Layer%206.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 4%; --top: 6%; --width: 38%;"><img src="clouds_new/Layer%204.png" alt=""></div>
+                <div class="cloud" style="--left: 52%; --top: 10%; --width: 26%;"><img src="clouds_new/Layer%206.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 61%; --lane-height: 14%; --lane-opacity: 0.32; --lane-z: 5; --lane-blur: 1px;">
+            <div class="cloud-track" style="--duration: 90s; --delay: -32s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 16%; --top: 12%; --width: 58%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 20%; --top: 12%; --width: 48%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="layer layer--front"><img src="front.png" alt="Горы и замок"></div>
+        <div class="layer layer--ui"><img src="ui.png" alt="Интерфейс"></div>
+      </div>
+    </article>
+
+    <article class="scene">
+      <p class="scene__label">
+        <span class="scene__name">Вариант 5</span>
+        <span class="scene__note">Контрастный ритм: тонкие быстрые и массивные медленные облака</span>
+      </p>
+      <div class="stage">
+        <div class="layer layer--back"><img src="back.png" alt="Небо"></div>
+        <section class="layer layer--clouds clouds-5" aria-hidden="true">
+          <div class="cloud-lane" style="--lane-top: 6%; --lane-height: 13%; --lane-opacity: 0.26; --lane-z: 1; --lane-blur: 0.6px;">
+            <div class="cloud-track" style="--duration: 88s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 0; --top: 8%; --width: 30%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+                <div class="cloud" style="--left: 52%; --top: 14%; --width: 16%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 74%; --top: 0; --width: 33%;"><img src="clouds_new/Layer%2021.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 1%; --top: 8%; --width: 24%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+                <div class="cloud" style="--left: 49%; --top: 14%; --width: 19%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 76%; --top: 0; --width: 26%;"><img src="clouds_new/Layer%2021.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 19%; --lane-height: 14%; --lane-opacity: 0.34; --lane-z: 2;">
+            <div class="cloud-track" style="--duration: 42s; --delay: -11s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 10%; --top: 20%; --width: 15%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 38%; --top: 2%; --width: 18%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 66%; --top: 14%; --width: 24%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 12%; --top: 20%; --width: 16%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 41%; --top: 2%; --width: 20%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 70%; --top: 16%; --width: 18%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 33%; --lane-height: 18%; --lane-opacity: 0.42; --lane-z: 3;">
+            <div class="cloud-track" style="--duration: 74s; --delay: -18s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 1%; --top: 7%; --width: 50%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+                <div class="cloud" style="--left: 71%; --top: 6%; --width: 18%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 5%; --top: 7%; --width: 40%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+                <div class="cloud" style="--left: 63%; --top: 4%; --width: 23%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 50%; --lane-height: 22%; --lane-opacity: 0.68; --lane-z: 4; --lane-blur: 0.05px;">
+            <div class="cloud-track" style="--duration: 46s; --delay: -7s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -3%; --top: 10%; --width: 44%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 44%; --top: 18%; --width: 18%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 59%; --top: 0; --width: 47%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 0; --top: 10%; --width: 33%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 38%; --top: 18%; --width: 22%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 61%; --top: 0; --width: 38%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 63%; --lane-height: 12%; --lane-opacity: 0.3; --lane-z: 5; --lane-blur: 1.1px;">
+            <div class="cloud-track" style="--duration: 98s; --delay: -29s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 15%; --top: 8%; --width: 60%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 18%; --top: 8%; --width: 46%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="layer layer--front"><img src="front.png" alt="Горы и замок"></div>
+        <div class="layer layer--ui"><img src="ui.png" alt="Интерфейс"></div>
+      </div>
+    </article>
+
+
+    <article class="scene">
+      <p class="scene__label">
+        <span class="scene__name">Вариант 7</span>
+        <span class="scene__note">Хаотичное поле облаков: рваная вертикаль, без явных полос и с плотным передним ходом</span>
+      </p>
+      <div class="stage">
+        <div class="layer layer--back"><img src="back.png" alt="Небо"></div>
+        <section class="layer layer--clouds clouds-v7" aria-hidden="true">
+          <div class="cloud-lane" style="--lane-z: 1; --lane-blur: 0.95px;">
+            <div class="cloud-track" style="--delay: -42s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 2%; --top: 32%; --width: 17%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 21%; --top: 8%; --width: 19%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 46%; --top: 26%; --width: 22%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+                <div class="cloud" style="--left: 66%; --top: 4%; --width: 25%;"><img src="clouds_new/Layer%2021.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 6%; --top: 20%; --width: 16%;"><img src="clouds_new/Layer%2015.png" alt=""></div>
+                <div class="cloud" style="--left: 27%; --top: 0; --width: 18%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 52%; --top: 34%; --width: 20%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 71%; --top: 12%; --width: 23%;"><img src="clouds_new/Layer%2026.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 2; --lane-blur: 0.45px;">
+            <div class="cloud-track" style="--delay: -22s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -4%; --top: 30%; --width: 19%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 12%; --top: 6%; --width: 29%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+                <div class="cloud" style="--left: 39%; --top: 38%; --width: 17%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 54%; --top: 14%; --width: 24%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 70%; --top: 0; --width: 30%;"><img src="clouds_new/Layer%2018.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 0; --top: 12%; --width: 16%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 18%; --top: 34%; --width: 22%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 42%; --top: 4%; --width: 27%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 63%; --top: 28%; --width: 18%;"><img src="clouds_new/Layer%2015.png" alt=""></div>
+                <div class="cloud" style="--left: 75%; --top: 10%; --width: 23%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 3;">
+            <div class="cloud-track" style="--delay: -12s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -7%; --top: 6%; --width: 18%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 10%; --top: 28%; --width: 34%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 38%; --top: 10%; --width: 20%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 53%; --top: 34%; --width: 24%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+                <div class="cloud" style="--left: 66%; --top: 2%; --width: 33%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -1%; --top: 24%; --width: 19%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 15%; --top: 4%; --width: 27%;"><img src="clouds_new/Layer%2018.png" alt=""></div>
+                <div class="cloud" style="--left: 44%; --top: 30%; --width: 21%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 57%; --top: 8%; --width: 22%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 71%; --top: 18%; --width: 29%;"><img src="clouds_new/Layer%2022.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 4;">
+            <div class="cloud-track" style="--delay: -6s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -9%; --top: 18%; --width: 31%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 14%; --top: 2%; --width: 39%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+                <div class="cloud" style="--left: 47%; --top: 26%; --width: 18%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 58%; --top: 8%; --width: 35%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -5%; --top: 6%; --width: 34%;"><img src="clouds_new/Layer%204.png" alt=""></div>
+                <div class="cloud" style="--left: 25%; --top: 30%; --width: 17%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 40%; --top: 12%; --width: 21%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 56%; --top: 0; --width: 32%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 5; --lane-blur: 0.08px;">
+            <div class="cloud-track" style="--delay: -2s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -11%; --top: 22%; --width: 34%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 12%; --top: 4%; --width: 43%;"><img src="clouds_new/Layer%204.png" alt=""></div>
+                <div class="cloud" style="--left: 58%; --top: 6%; --width: 40%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -7%; --top: 8%; --width: 37%;"><img src="clouds_new/Layer%204.png" alt=""></div>
+                <div class="cloud" style="--left: 44%; --top: 2%; --width: 24%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 60%; --top: 18%; --width: 36%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="layer layer--front"><img src="front.png" alt="Горы и замок"></div>
+        <div class="layer layer--ui"><img src="ui.png" alt="Интерфейс"></div>
+      </div>
+    </article>
+
+    <article class="scene">
+      <p class="scene__label">
+        <span class="scene__name">Вариант 8</span>
+        <span class="scene__note">Живое небо: диагональные скопления, рыхлая середина и широкий передний поток</span>
+      </p>
+      <div class="stage">
+        <div class="layer layer--back"><img src="back.png" alt="Небо"></div>
+        <section class="layer layer--clouds clouds-v8" aria-hidden="true">
+          <div class="cloud-lane" style="--lane-z: 1; --lane-blur: 0.75px;">
+            <div class="cloud-track" style="--delay: -54s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 0; --top: 26%; --width: 17%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 20%; --top: 6%; --width: 18%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+                <div class="cloud" style="--left: 42%; --top: 30%; --width: 20%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 58%; --top: 0; --width: 29%;"><img src="clouds_new/Layer%2021.png" alt=""></div>
+                <div class="cloud" style="--left: 82%; --top: 18%; --width: 14%;"><img src="clouds_new/Layer%2015.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 6%; --top: 10%; --width: 16%;"><img src="clouds_new/Layer%2015.png" alt=""></div>
+                <div class="cloud" style="--left: 27%; --top: 34%; --width: 17%;"><img src="clouds_new/Layer%2012.png" alt=""></div>
+                <div class="cloud" style="--left: 49%; --top: 8%; --width: 22%;"><img src="clouds_new/Layer%2019.png" alt=""></div>
+                <div class="cloud" style="--left: 64%; --top: 2%; --width: 26%;"><img src="clouds_new/Layer%2026.png" alt=""></div>
+                <div class="cloud" style="--left: 84%; --top: 24%; --width: 13%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 2; --lane-blur: 0.4px;">
+            <div class="cloud-track" style="--delay: -26s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -5%; --top: 10%; --width: 18%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 11%; --top: 32%; --width: 26%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 29%; --top: 4%; --width: 30%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+                <div class="cloud" style="--left: 58%; --top: 24%; --width: 19%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 66%; --top: 0; --width: 30%;"><img src="clouds_new/Layer%2018.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 0; --top: 24%; --width: 16%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 17%; --top: 8%; --width: 24%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 38%; --top: 34%; --width: 21%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 54%; --top: 6%; --width: 20%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 70%; --top: 18%; --width: 28%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 3;">
+            <div class="cloud-track" style="--delay: -15s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -7%; --top: 28%; --width: 21%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 10%; --top: 2%; --width: 33%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 35%; --top: 34%; --width: 22%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 49%; --top: 10%; --width: 24%;"><img src="clouds_new/Layer%2023.png" alt=""></div>
+                <div class="cloud" style="--left: 67%; --top: 0; --width: 35%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -2%; --top: 8%; --width: 19%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 18%; --top: 30%; --width: 30%;"><img src="clouds_new/Layer%2018.png" alt=""></div>
+                <div class="cloud" style="--left: 47%; --top: 2%; --width: 20%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 59%; --top: 24%; --width: 22%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 72%; --top: 8%; --width: 31%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-z: 4; --lane-blur: 0.08px;">
+            <div class="cloud-track" style="--delay: -8s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -9%; --top: 6%; --width: 40%;"><img src="clouds_new/Layer%204.png" alt=""></div>
+                <div class="cloud" style="--left: 22%; --top: 32%; --width: 17%;"><img src="clouds_new/Layer%206.png" alt=""></div>
+                <div class="cloud" style="--left: 38%; --top: 12%; --width: 21%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+                <div class="cloud" style="--left: 52%; --top: 0; --width: 43%;"><img src="clouds_new/Layer%2027.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -6%; --top: 24%; --width: 34%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 30%; --top: 4%; --width: 19%;"><img src="clouds_new/Layer%2016.png" alt=""></div>
+                <div class="cloud" style="--left: 44%; --top: 30%; --width: 20%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 58%; --top: 8%; --width: 39%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="layer layer--front"><img src="front.png" alt="Горы и замок"></div>
+        <div class="layer layer--ui"><img src="ui.png" alt="Интерфейс"></div>
+      </div>
+    </article>
+
+    <article class="scene">
+      <p class="scene__label">
+        <span class="scene__name">Вариант 9</span>
+        <span class="scene__note">Быстрый ветер: ускоренный ход всех слоев и резкий ритм</span>
+      </p>
+      <div class="stage">
+        <div class="layer layer--back"><img src="back.png" alt="Небо"></div>
+        <section class="layer layer--clouds clouds-3" aria-hidden="true">
+          <div class="cloud-lane" style="--lane-top: 8%; --lane-height: 12%; --lane-opacity: 0.42; --lane-z: 1;">
+            <div class="cloud-track" style="--duration: 36s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: 8%; --top: 12%; --width: 18%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+                <div class="cloud" style="--left: 54%; --top: 4%; --width: 28%;"><img src="clouds_new/Layer%2021.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: 8%; --top: 12%; --width: 18%;"><img src="clouds_new/Layer%2013.png" alt=""></div>
+                <div class="cloud" style="--left: 54%; --top: 4%; --width: 28%;"><img src="clouds_new/Layer%2021.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 26%; --lane-height: 16%; --lane-opacity: 0.58; --lane-z: 2;">
+            <div class="cloud-track" style="--duration: 24s; --delay: -5s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -2%; --top: 20%; --width: 20%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 28%; --top: 8%; --width: 36%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 70%; --top: 14%; --width: 18%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -2%; --top: 20%; --width: 20%;"><img src="clouds_new/Layer%2024.png" alt=""></div>
+                <div class="cloud" style="--left: 28%; --top: 8%; --width: 36%;"><img src="clouds_new/Layer%2017.png" alt=""></div>
+                <div class="cloud" style="--left: 70%; --top: 14%; --width: 14%;"><img src="clouds_new/Layer%2020.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+
+          <div class="cloud-lane" style="--lane-top: 48%; --lane-height: 20%; --lane-opacity: 0.76; --lane-z: 3;">
+            <div class="cloud-track" style="--duration: 18s; --delay: -3s;">
+              <div class="cloud-group">
+                <div class="cloud" style="--left: -6%; --top: 10%; --width: 42%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 46%; --top: 4%; --width: 38%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+              <div class="cloud-group" aria-hidden="true">
+                <div class="cloud" style="--left: -6%; --top: 10%; --width: 42%;"><img src="clouds_new/Layer%203.png" alt=""></div>
+                <div class="cloud" style="--left: 46%; --top: 4%; --width: 38%;"><img src="clouds_new/Layer%2025.png" alt=""></div>
+              </div>
+            </div>
+          </div>
+        </section>
+        <div class="layer layer--front"><img src="front.png" alt="Горы и замок"></div>
+        <div class="layer layer--ui"><img src="ui.png" alt="Интерфейс"></div>
+      </div>
+    </article>
+
+  </main>
+</body>
+</html>
+
