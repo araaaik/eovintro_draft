@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title></title>
+<style>
+*{box-sizing:border-box}
+html,body{width:100%;height:100%;margin:0;overflow:hidden;background:#000}
+body{display:grid;place-items:center;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}
+.stage{position:relative;width:min(92vw,calc(84vh*920/2048));aspect-ratio:920/2048;background:#fff;overflow:hidden;border-radius:28px;box-shadow:0 24px 70px rgba(255,255,255,.16);contain:layout paint style}
+.logo-zone{position:absolute;inset:0;display:grid;place-items:center;transform:translate3d(0,-3%,0);contain:layout paint style}
+.logo-wrap{position:relative;width:56%;aspect-ratio:2472/2292;display:grid;place-items:center;transform-origin:50% 54%;will-change:transform,opacity;backface-visibility:hidden;transform:translate3d(0,0,0);contain:layout paint style}
+.logo-wrap:before,.logo-wrap:after{content:"";position:absolute;inset:-12%;pointer-events:none;opacity:0}
+.logo-wrap img{width:100%;height:100%;display:block;object-fit:contain;backface-visibility:hidden;transform:translate3d(0,0,0)}
+.switcher{position:fixed;left:50%;bottom:18px;transform:translateX(-50%);display:flex;gap:8px;padding:10px 12px;border-radius:999px;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(10px)}
+.switcher button{width:24px;height:24px;padding:0;border:0;border-radius:50%;background:rgba(255,255,255,.26);color:rgba(255,255,255,.82);font-size:12px;line-height:24px;text-align:center;cursor:pointer;transition:transform .18s ease,background .18s ease,color .18s ease;touch-action:manipulation}
+.switcher button:hover{transform:scale(1.12)}
+.switcher button.is-active{background:#fff;color:#000;transform:scale(1.18)}
+
+.stage.is-animating[data-anim="1"] .logo-wrap{animation:a1-in .72s cubic-bezier(.2,.9,.2,1) both,a1-loop 2.2s ease-in-out .72s infinite}
+@keyframes a1-in{0%{opacity:0;transform:translate3d(0,32px,0) scale(.96);filter:blur(10px)}100%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+@keyframes a1-loop{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-10px,0) scale(1.015)}}
+
+.stage.is-animating[data-anim="2"] .logo-wrap{animation:a2-in .9s cubic-bezier(.22,.9,.22,1) both,a2-loop 2.25s ease-in-out .9s infinite}
+@keyframes a2-in{0%{opacity:0;transform:scale(.84);filter:blur(6px)}62%{opacity:1;transform:scale(1.012);filter:blur(0)}100%{opacity:1;transform:scale(1);filter:blur(0)}}
+@keyframes a2-loop{0%,100%{transform:scale(1)}50%{transform:scale(1.018)}}
+
+.stage.is-animating[data-anim="3"] .logo-wrap{animation:a3-in .8s cubic-bezier(.2,.85,.2,1) both,a3-loop 2.5s ease-in-out .8s infinite}
+@keyframes a3-in{0%{opacity:0;transform:perspective(900px) rotateY(-58deg) scale(.9)}100%{opacity:1;transform:perspective(900px) rotateY(0) scale(1)}}
+@keyframes a3-loop{0%,100%{transform:perspective(900px) rotateY(0deg)}50%{transform:perspective(900px) rotateY(7deg)}}
+
+.stage.is-animating[data-anim="4"] .logo-wrap{overflow:hidden;animation:a4-in .82s cubic-bezier(.25,.9,.2,1) both,a4-loop 2.7s ease-in-out .82s infinite}
+.stage.is-animating[data-anim="4"] .logo-wrap:after{inset:-30%;background:linear-gradient(105deg,transparent 39%,rgba(255,255,255,.68) 50%,transparent 61%);mix-blend-mode:screen;animation:a4-shine 2.7s ease-in-out .82s infinite;will-change:transform,opacity}
+@keyframes a4-in{0%{opacity:0;clip-path:inset(0 100% 0 0);transform:scale(.98)}100%{opacity:1;clip-path:inset(0 0 0 0);transform:scale(1)}}
+@keyframes a4-loop{0%,100%{transform:scale(1)}50%{transform:scale(1.01)}}
+@keyframes a4-shine{0%{opacity:0;transform:translate3d(-95%,0,0)}18%{opacity:0;transform:translate3d(-95%,0,0)}32%{opacity:.62}52%{opacity:.62}68%{opacity:0;transform:translate3d(95%,0,0)}100%{opacity:0;transform:translate3d(95%,0,0)}}
+
+.stage.is-animating[data-anim="5"] .logo-wrap{animation:a5-in .62s ease-out both,a5-loop 1.55s ease-in-out .62s infinite}
+@keyframes a5-in{0%{opacity:0;transform:scale(1.18);filter:blur(6px)}100%{opacity:1;transform:scale(1);filter:blur(0)}}
+@keyframes a5-loop{0%,100%{opacity:1;transform:scale(1)}50%{opacity:.86;transform:scale(.988)}}
+
+.stage.is-animating[data-anim="6"] .logo-wrap{animation:a7-in .84s cubic-bezier(.2,.86,.2,1) both,a7-loop 2.6s ease-in-out .84s infinite}
+@keyframes a7-in{0%{opacity:0;transform:scale(.9);clip-path:circle(0% at 50% 52%)}100%{opacity:1;transform:scale(1);clip-path:circle(78% at 50% 52%)}}
+@keyframes a7-loop{0%,100%{transform:scale(1)}50%{transform:scale(1.012)}}
+
+.stage.is-animating[data-anim="7"] .logo-wrap{transform-origin:50% 72%;animation:a10-in .78s cubic-bezier(.2,.9,.2,1) both,a10-loop 2.4s ease-in-out .78s infinite}
+@keyframes a10-in{0%{opacity:0;transform:translate3d(0,34px,0) scaleY(.88) scaleX(1.05);filter:blur(7px)}70%{opacity:1;transform:translate3d(0,-4px,0) scaleY(1.025) scaleX(.988);filter:blur(0)}100%{opacity:1;transform:translate3d(0,0,0) scale(1);filter:blur(0)}}
+@keyframes a10-loop{0%,100%{transform:translate3d(0,0,0) scale(1)}50%{transform:translate3d(0,-5px,0) scaleY(1.012) scaleX(.996)}}
+
+@media (hover:none) and (pointer:coarse), (max-width:520px){
+  .stage{box-shadow:0 16px 44px rgba(255,255,255,.12)}
+  .switcher{backdrop-filter:none;background:rgba(20,20,20,.72)}
+  .logo-wrap,.logo-wrap:before,.logo-wrap:after{will-change:transform,opacity}
+  @keyframes a1-in{0%{opacity:0;transform:translate3d(0,28px,0) scale(.96)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+  @keyframes a2-in{0%{opacity:0;transform:scale(.86)}62%{opacity:1;transform:scale(1.012)}100%{opacity:1;transform:scale(1)}}
+  @keyframes a4-in{0%{opacity:0;transform:translate3d(-18px,0,0) scale(.98)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+  .stage.is-animating[data-anim="4"] .logo-wrap:after{mix-blend-mode:normal;opacity:.45}
+  @keyframes a5-in{0%{opacity:0;transform:scale(1.14)}100%{opacity:1;transform:scale(1)}}
+  @keyframes a7-in{0%{opacity:0;transform:scale(.9)}100%{opacity:1;transform:scale(1)}}
+  @keyframes a10-in{0%{opacity:0;transform:translate3d(0,32px,0) scaleY(.9) scaleX(1.04)}70%{opacity:1;transform:translate3d(0,-4px,0) scaleY(1.02) scaleX(.99)}100%{opacity:1;transform:translate3d(0,0,0) scale(1)}}
+}
+
+@media (prefers-reduced-motion:reduce){.logo-wrap,.logo-wrap:before,.logo-wrap:after{animation-duration:.001s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<main class="stage" data-anim="1"><div class="logo-zone"><div class="logo-wrap"><img src="logo.svg" alt=""></div></div></main>
+<nav class="switcher" aria-label="Animation selector"><button class="is-active" data-anim="1" aria-label="1">1</button><button data-anim="2" aria-label="2">2</button><button data-anim="3" aria-label="3">3</button><button data-anim="4" aria-label="4">4</button><button data-anim="5" aria-label="5">5</button><button data-anim="6" aria-label="6">6</button><button data-anim="7" aria-label="7">7</button></nav>
+<script>
+const stage=document.querySelector('.stage');
+const buttons=[...document.querySelectorAll('.switcher button')];
+let raf=0;
+function setAnimation(id){
+  if(stage.dataset.anim===id && stage.classList.contains('is-animating')) return;
+  stage.classList.remove('is-animating');
+  stage.dataset.anim=id;
+  buttons.forEach(button=>button.classList.toggle('is-active',button.dataset.anim===id));
+  cancelAnimationFrame(raf);
+  raf=requestAnimationFrame(()=>stage.classList.add('is-animating'));
+}
+stage.classList.add('is-animating');
+buttons.forEach(button=>button.addEventListener('click',()=>setAnimation(button.dataset.anim),{passive:true}));
+window.addEventListener('keydown',event=>{
+  const current=Number(stage.dataset.anim);
+  const max=7;
+  if(event.key==='ArrowRight') setAnimation(String(current===max?1:current+1));
+  if(event.key==='ArrowLeft') setAnimation(String(current===1?max:current-1));
+});
+</script>
+</body>
+</html>
