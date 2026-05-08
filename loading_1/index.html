@@ -1,0 +1,212 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Gamebion Logo Animation</title>
+
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+
+    :root {
+      --shine-duration: 2.05s;
+      --shine-delay: .62s;
+      --shine-skew: 14deg;
+      --shine-skew-neg: -14deg;
+    }
+
+    html,
+    body {
+      width: 100%;
+      height: 100%;
+      margin: 0;
+      overflow: hidden;
+      background: #000;
+    }
+
+    body {
+      display: grid;
+      place-items: center;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    }
+
+    .stage {
+      position: relative;
+      width: min(92vw, calc(84vh * 920 / 2048));
+      aspect-ratio: 920 / 2048;
+      background: url("back.png") center / cover no-repeat;
+      overflow: hidden;
+      contain: strict;
+    }
+
+    .logo-zone {
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      transform: translateY(-3%);
+    }
+
+    .logo-wrap {
+      position: relative;
+      width: 56%;
+      aspect-ratio: 2472 / 2292;
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      animation: a4-in .82s cubic-bezier(.25, .9, .2, 1) forwards;
+      will-change: opacity, clip-path;
+    }
+
+    .logo-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+      transform: translateZ(0);
+    }
+
+    .logo-shine {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      animation: a4-shine-opacity var(--shine-duration) linear var(--shine-delay) infinite;
+    }
+
+    .shine-window {
+      position: absolute;
+      top: -8%;
+      left: 0;
+      width: 42%;
+      height: 116%;
+      overflow: hidden;
+      transform: translateX(-120%) skewX(var(--shine-skew-neg));
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        #000 36%,
+        #000 64%,
+        transparent 100%
+      );
+      mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        #000 36%,
+        #000 64%,
+        transparent 100%
+      );
+      animation: a4-shine-window var(--shine-duration) linear var(--shine-delay) infinite;
+      will-change: transform;
+    }
+
+    .shine-img {
+      position: absolute;
+      top: 6.896%;
+      left: 0;
+      width: 238.095%;
+      height: 86.207%;
+      display: block;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: .85;
+      transform: translateX(50.4%) skewX(var(--shine-skew));
+      transform-origin: 0 50%;
+      animation: a4-shine-counter var(--shine-duration) linear var(--shine-delay) infinite;
+    }
+
+    @keyframes a4-in {
+      to {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+      }
+    }
+
+    @keyframes a4-shine-opacity {
+      0%,
+      3.85%,
+      35.38%,
+      100% {
+        opacity: 0;
+      }
+
+      9.23% {
+        opacity: .8;
+      }
+
+      16.92% {
+        opacity: .7;
+      }
+
+      26.15% {
+        opacity: .4;
+      }
+    }
+
+    @keyframes a4-shine-window {
+      0%,
+      3.85% {
+        transform: translateX(-120%) skewX(var(--shine-skew-neg));
+      }
+
+      35.38%,
+      100% {
+        transform: translateX(148%) skewX(var(--shine-skew-neg));
+      }
+    }
+
+    @keyframes a4-shine-counter {
+      0%,
+      3.85% {
+        transform: translateX(50.4%) skewX(var(--shine-skew));
+      }
+
+      35.38%,
+      100% {
+        transform: translateX(-62.16%) skewX(var(--shine-skew));
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .logo-wrap,
+      .logo-shine,
+      .shine-window,
+      .shine-img {
+        animation: none !important;
+        opacity: 1 !important;
+        clip-path: none !important;
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <main class="stage">
+    <div class="logo-zone">
+      <div class="logo-wrap">
+        <img
+          src="logo.svg"
+          width="515"
+          height="478"
+          class="logo-img"
+          alt=""
+        >
+
+        <div class="logo-shine">
+          <div class="shine-window">
+            <img
+              src="logo.svg"
+              width="515"
+              height="478"
+              class="shine-img"
+              alt=""
+            >
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</body>
+</html>

@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+
+  <style>
+    .logo-animation {
+      --shine-duration: 2.05s;
+      --shine-delay: .62s;
+      --shine-skew: 14deg;
+      --shine-skew-neg: -14deg;
+
+      position: relative;
+      width: 320px;
+      aspect-ratio: 2472 / 2292;
+      opacity: 0;
+      clip-path: inset(0 100% 0 0);
+      animation: logo-in .82s cubic-bezier(.25, .9, .2, 1) forwards;
+      overflow: hidden;
+    }
+
+    .logo-img {
+      width: 100%;
+      height: 100%;
+      display: block;
+      object-fit: contain;
+    }
+
+    .logo-shine {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      opacity: 0;
+      mix-blend-mode: screen;
+      animation: shine-opacity var(--shine-duration) linear var(--shine-delay) infinite;
+    }
+
+    .shine-window {
+      position: absolute;
+      top: -8%;
+      left: 0;
+      width: 42%;
+      height: 116%;
+      overflow: hidden;
+      transform: translateX(-120%) skewX(var(--shine-skew-neg));
+      mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        #000 36%,
+        #000 64%,
+        transparent 100%
+      );
+      -webkit-mask-image: linear-gradient(
+        90deg,
+        transparent 0%,
+        #000 36%,
+        #000 64%,
+        transparent 100%
+      );
+      animation: shine-window var(--shine-duration) linear var(--shine-delay) infinite;
+    }
+
+    .shine-img {
+      position: absolute;
+      top: 6.896%;
+      left: 0;
+      width: 238.095%;
+      height: 86.207%;
+      object-fit: contain;
+      filter: brightness(0) invert(1);
+      opacity: .85;
+      transform: translateX(50.4%) skewX(var(--shine-skew));
+      transform-origin: 0 50%;
+      animation: shine-counter var(--shine-duration) linear var(--shine-delay) infinite;
+    }
+
+    @keyframes logo-in {
+      to {
+        opacity: 1;
+        clip-path: inset(0 0 0 0);
+      }
+    }
+
+    @keyframes shine-opacity {
+      0%,
+      3.85%,
+      35.38%,
+      100% {
+        opacity: 0;
+      }
+
+      9.23% {
+        opacity: .8;
+      }
+
+      16.92% {
+        opacity: .7;
+      }
+
+      26.15% {
+        opacity: .4;
+      }
+    }
+
+    @keyframes shine-window {
+      0%,
+      3.85% {
+        transform: translateX(-120%) skewX(var(--shine-skew-neg));
+      }
+
+      35.38%,
+      100% {
+        transform: translateX(148%) skewX(var(--shine-skew-neg));
+      }
+    }
+
+    @keyframes shine-counter {
+      0%,
+      3.85% {
+        transform: translateX(50.4%) skewX(var(--shine-skew));
+      }
+
+      35.38%,
+      100% {
+        transform: translateX(-62.16%) skewX(var(--shine-skew));
+      }
+    }
+  </style>
+</head>
+
+<body>
+  <div class="logo-animation">
+    <img src="logo.svg" class="logo-img" alt="Gamebion logo">
+
+    <div class="logo-shine">
+      <div class="shine-window">
+        <img src="logo.svg" class="shine-img" alt="">
+      </div>
+    </div>
+  </div>
+</body>
+</html>
