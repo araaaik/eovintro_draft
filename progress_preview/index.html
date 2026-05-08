@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="ru">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Progress Bar Preview</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <main class="stage" aria-label="Progress bar preview">
+    <section class="screen label-style-8">
+      <div class="loading-widget">
+        <div class="loading-label">Loading <span data-progress-value>70%</span></div>
+        <div class="progress-bar" role="progressbar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="70">
+          <div class="progress-track">
+            <div class="progress-fill"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <nav class="controls" aria-label="Preview controls">
+      <div class="control-group" aria-label="Progress states">
+        <button type="button" data-progress="30">30%</button>
+        <button type="button" data-progress="70" class="is-active">70%</button>
+        <button type="button" data-progress="100">100%</button>
+      </div>
+    </nav>
+  </main>
+
+  <script src="preview.js"></script>
+</body>
+</html>
